@@ -19,6 +19,12 @@ getwd()
 ###### 01.20.2018 Deployment ############
 ##########################################
 
+
+#load in 1
+read.csv("Light_logger/01.20.2018/2488_01202018.CSV", skip=8)
+
+
+
 ##### grab files in a list
 PAR.files <- list.files(path="Light_logger/01.20.2018", pattern = "CSV$", full.names = T); PAR.files
 
@@ -44,17 +50,17 @@ for(i in 1:length(PAR.files))
 #WORKS
 ########## see the files you've made, as a list, then grab those that fill your pattern 
 ls()
-#files<-as.data.frame(mget(ls(pattern = "SN.*"))) # with SN as patterns in files from for loops
-#names(files) # see number of columns, and what these are
-#data_index<-c(1,(seq(2,6,2))) # these are the columns we will want: timestamp + raw data **change '18' to number of columns in your dataframe, specifying here to select 'every other column'
+files<-as.data.frame(mget(ls(pattern = "SN.*"))) # with SN as patterns in files from for loops
+names(files) # see number of columns, and what these are
+data_index<-c(1,(seq(2,17,2))) # these are the columns we will want: timestamp + raw data **change '18' to number of columns in your dataframe, specifying here to select 'every other column'
 
-#Jan20.18.PAR<-as.data.frame(c(files[, data_index])) # here is the data we want, now in df alone
-#names(June.PAR) = gsub(pattern = "_.*", replacement = "", x = names(June.PAR)) #strip name to SN only
-#colnames(June.PAR)[1]="timestamp" # rename the single column for time
+Jan20.18.PAR<-as.data.frame(c(files[, data_index])) # here is the data we want, now in df alone
+names(June.PAR) = gsub(pattern = "_.*", replacement = "", x = names(June.PAR)) #strip name to SN only
+colnames(June.PAR)[1]="timestamp" # rename the single column for time
 
 
 #the above didnt work so do manually...
-colnames(SN10956_01202018)<-c("timestamp", "SN10956")
+colnames(test)<-c("timestamp", "SN10956")
 colnames(SN10957_01202018)<-c("timestamp", "SN10957")
 colnames(SN10958_01202018)<-c("timestamp", "SN10958")
 colnames(SN10959_01202018)<-c("timestamp", "SN10959")
@@ -71,7 +77,18 @@ colnames(SN7278_01202018)<-c("timestamp", "SN7278")
 colnames(SN7279_01202018)<-c("timestamp", "SN7279")
 colnames(SN7280_01202018)<-c("timestamp", "SN7280")
 
+#look for duplicated time stamps
+library(move)
+getDuplicatedTimestamps(x=as.factor(SN2488_01202018$Raw.PAR), 
+                        timestamps=as.POSIXct(SN2488_01202018$timestamp, 
+                                              format="%Y-%d-%m %H:%M:%S"))
+                        
+
+
+
+
 # above not working bc row nums not consitent. instead, merge using "Reduce" bc merge only does 2 dfs
+
 Jan20.18.PAR<-Reduce(merge, list(SN10956_01202018,SN10957_01202018,SN10958_01202018,SN10959_01202018))
                                  
                                  
@@ -82,8 +99,8 @@ merge(SN10956_01202018,SN10957_01202018,SN10958_01202018,SN10959_01202018, SN248
 
 vJan20.18.PAR<-merge(SN10956_01202018,SN10957_01202018,SN10958_01202018, by=c("timestamp"))
 
-Test1<-merge(SN10956_01202018,SN10957_01202018)
-Test2<-merge(Test1, SN10958_01202018)
+Test1b<-merge(SN10956_01202018,SN10957_01202018, by="timestamp")
+Test1c<-merge(Test1b, SN10958_01202018, by="timestamp")
 
 ##use rbind to stack your diff dates for same logger
 
