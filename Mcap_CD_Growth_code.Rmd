@@ -1,0 +1,32 @@
+---
+title: "Mcap_CD"
+author: "Shayle Matsuda"
+date: "12/5/2020"
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Mcap CD growth experiment: Buoyant Weight and qPCR
+
+load in libraries
+
+
+```{r}
+#rm(list=ls()) # removes all prior objects
+
+library("car") #levenes test
+library("ggplot2") #plotting
+library("plotrix") #plotting
+library("reshape") #data shaping
+require("gridExtra") #Arrange Plots for output
+require("plyr") #for ddply
+require("dplyr")
+require("utils")
+library("reshape2") #data shaping
+library(lubridate)
+```
+

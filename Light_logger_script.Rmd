@@ -1,11 +1,11 @@
 ---
-title: "Light_logger"
+title: "logger"
 author: "Shayle Matsuda"
 date: "1/5/2022"
 output: html_document
 ---
-Light loggers 
-Orginal script by M. Hoban
+Light and Temp loggers 
+Original script by M. Hoban
 ```{r}
 #rm(list=ls())
 
@@ -160,9 +160,7 @@ light_plot<-ggplot(data=Mcap.light.2.melt.meta, aes(x=datetime, y=Light, group =
   theme(plot.title = element_text(size=20, face = "italic"));light_plot 
 
 ```
-
-Temperature Loggers
-
+load libraries
 ```{r}
 #rm(list=ls())
 
@@ -170,10 +168,13 @@ library(tidyverse)
 library(fs)
 library(lubridate)# for date parsing
 library(reshape2)
+```
 
+
+Light loggers (oddysey)
+```{r}
 #load data
-csv_files <- dir_ls("temp_logger",glob="*.CSV",recurse = TRUE)
-
+csv_files <- dir_ls("logger_files",glob="*.CSV",recurse = TRUE)
 # map_dfr on the list of csv files
 # the function loads each file, does some transformation, 
 # and returns the dataframe with an associated logger ID
@@ -210,16 +211,15 @@ loggers <- map_dfr(csv_files,function(csv) {
   return(
     # first we read the csv file
     read_csv(csv,
-             skip = 1, # skip 1 row
-            col_skip(1, 4:10),
-             col_names = c("datetime","Temp"), # name our columns
-             col_types = "cn") %>% # force it to read the columns as numeric, character, character, numeric, numeric ("nccnn"
+             skip = 9, # skip 9 rows
+             col_names = c("scan_number","date","time","raw","calibrated"), # name our columns
+             col_types = "nccnn") %>% # force it to read the columns as numeric, character, character, numeric, numeric ("nccnn"
                                       # note the %>% on the line above. That will "pipe" the csv file into the next function
       # now we trim off whitespace from our dates and times
       # mutate is used to change columns
       # across(where(is.character)) chooses just columns containing character string
       # str_trim cuts whitespace, so something like "22/12/2017 " turns into just "22/12/2017"
-     # mutate(across(where(is.character), str_trim)) %>% 
+      mutate(across(where(is.character), str_trim)) %>% 
       # now we make a new column in POSIXct format, parsing the date and time using the two different
       # formats we might expect to see (two digit year or three digit year)
       # remember, str_c just smashes two strings together, so I'm smashing the date and time together with a space between
@@ -230,21 +230,155 @@ loggers <- map_dfr(csv_files,function(csv) {
       ) %>%
       # select just lets us pull out specific columns
       # these are the ones we want
+      select(logger, datetime, raw, calibrated)
+  )
+  
+})
+# make wide
+loggers_wide <- loggers %>%
+  select(-raw) %>% # get rid of the raw column
+  pivot_wider(names_from="logger",values_from="calibrated") %>%
+  arrange(datetime)
+# save the wide version of the file to CSV
+#write_csv(loggers_wide,"loggers_wide.csv")
+#REMOVE LOGGER 6377 UNLESS YOU LOCATE CALIBRATION FILE
+loggers_wide = subset(loggers_wide, select = -c(logger_6377) )
+Mcap.light<-loggers_wide #make a copy
+##############
+#calibrate the loggers. then melt data and add in Treatment for light groups. then plot by those. 
+# logger 2488 calibration: y=0.06069x R^2=0.999
+Mcap.light$logger_2488CAL <- Mcap.light$logger_2488 * 0.06069
+# logger 6377 calibration: y=0.1437x R^2=.3 <-  something up DO NOT INCLUDE this logger!
+#Mcap.light$logger_6377CAL <- Mcap.light$logger_6377 * 0.1437
+# logger 6378 calibration: y=0.1182x R^2=0.999
+Mcap.light$logger_6378CAL <- Mcap.light$logger_6378 * 0.1182
+# logger 7272 calibration: y=0.06658x R^2=0.999
+Mcap.light$logger_7272CAL <- Mcap.light$logger_7272 * 0.06658
+# logger 7274 calibration: y=0.06628x R^2=0.999
+Mcap.light$logger_7274CAL <- Mcap.light$logger_7274 * 0.06628
+# logger 7277 calibration: y=0.06787x R^2=0.999
+Mcap.light$logger_7277CAL <- Mcap.light$logger_7277 * 0.06787
+# logger 7278 calibration: y=0.05946x R^2=0.999
+Mcap.light$logger_7278CAL <- Mcap.light$logger_7278 * 0.05946
+# logger 7279 calibration: y=0.07278x R^2=0.999
+Mcap.light$logger_7279CAL <- Mcap.light$logger_7279 * 0.07278
+# logger 7280 calibration: y=0.06481x R^2=0.999
+Mcap.light$logger_7280CAL <- Mcap.light$logger_7280 * 0.06481
+# logger 10956 calibration: y=0.05712x R^2=1
+Mcap.light$logger_10956CAL <- Mcap.light$logger_10956 * 0.05712
+# logger 10957 calibration: y=0.05758x R^2=0.999
+Mcap.light$logger_10957CAL <- Mcap.light$logger_10957 * 0.05758
+# logger 10959 calibration: y=0.06052x R^2=1
+Mcap.light$logger_10959CAL <- Mcap.light$logger_10959 * 0.06052
+Mcap.light.2<- subset(Mcap.light, select = -c( 2 : 16 ))
+logger.df<-read.csv("UROP_logger_locations.csv")
+#melt the df and then add metadata
+Mcap.light.2.melt<-melt(Mcap.light.2, id.vars = c("datetime")) #melt
+  #rename cols
+Mcap.light.2.melt<-rename(Mcap.light.2.melt, Light.logger = "variable")
+Mcap.light.2.melt<-rename(Mcap.light.2.melt, Light = "value")
+
+#
+#merge with metadata
+Mcap.light.2.melt.meta<-merge(Mcap.light.2.melt, logger.df)
+light_plot<-ggplot(data=Mcap.light.2.melt.meta, aes(x=datetime, y=Light, group = Shade, color=Shade)) +
+  # geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+  #               width=0.1, show.legend = F)+
+  #geom_point(aes(color=Treatment), size=4, show.legend = F)+
+  geom_line(aes(color=Shade), linetype=2, show.legend = F)+
+  #scale_color_manual(values=c("dodgerblue3", "darkred"))+
+  xlab("") + #Label the X Axis
+  #ylim(0, 11) + #set Y limits
+  #scale_y_log10()+
+  theme_bw() + #Set the ITSkground color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot ITSkground
+        legend.key = element_blank()) + #Set plot legend key
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(),
+        panel.background = element_rect(colour = "black", size=1))+
+  theme(aspect.ratio=1)+
+  ylab(expression(paste("Light"))) +
+  ggtitle("UROP light")+
+  theme(plot.title = element_text(size=20, face = "italic"));light_plot 
+```
+
+
+Temperature Loggers
+
+```{r}
+
+
+#load data
+csv_files <- dir_ls("temp_logger",glob="*.csv",recurse = TRUE)
+# csv<-csv_files{1}
+
+# map_dfr on the list of csv files
+# the function loads each file, does some transformation, 
+# and returns the dataframe with an associated logger ID
+# Then all those dataframes get smashed together into one big one.
+loggers <- map_dfr(csv_files,function(csv) {
+  # let's try to get the logger id
+  # we'll start with the csv filename without any leading
+  # directories and without the .csv at the end
+  logger_id <- path_ext_remove(path_file(csv))
+  # now, let's make sure that logger id looks like this: XXXX_XXXXX
+  # Regular expressions are a whole huge complicated thing, but
+  # "^(._)_" basically says: 
+  # at the start of the string, do I have some characters followed by an underscore
+  # the parentheses are used to "capture" those characters that come before the underscore
+  # str_detect just says whether the logger id looks like we want it to
+  if (str_detect(logger_id,"^(.+)_")) {
+    # if it does look like we want it to, pull out just the part
+    # before the underscore. str_match returns a matrix and the second column
+    # contains what's between the parentheses
+    # for much more detail, check out the help for str_match and str_detect
+    logger_id <- str_match(logger_id,"^(.+)_")[1,2]
+  }
+  
+  # this is where the magic happens. Tidyverse uses a thing called a "pipe" (the %>% that you see below)
+  # The pipe allows you to chain together multiple functions with the result of one being "piped" into
+  # the input of the next. The way pipes work is that if you have a function called do_thing that takes an argument,
+  # calling do_thing(x) is the same as calling x %>% do_thing(). You can do it multiple times:
+  # x %>% do_thing() %>% do_thing() %>% do_thing()
+  # would be the same as do_thing(do_thing(do_thing(x)))
+  # In pipes, you can use . (dot) to refer to the thing being piped in
+  # so in the above example . refers to x, so x %>% do_thing() is the same as x %>% do_thing(.)
+  # It'll really help to read some intro material on the tidyverse because it's very elegant and 
+  # simple but it can also be very confusing
+  return(
+    # first we read the csv file
+     read_csv(
+      csv,
+      skip = 2,
+      col_select=c(2,3),
+      col_types = "ncncccc",
+      col_names = FALSE
+    ) %>%
+      rename("datetime" = 1, "Temp" = 2) %>%
+      mutate(
+        datetime = parse_date_time(datetime,"m/d/y I:M:S p", tz="HST"),
+        logger = factor(str_c("logger_",logger_id))
+      ) %>%
+      # select just lets us pull out specific columns
+      # these are the ones we want
       select(logger, datetime, Temp)
   )
   
 })
 
-
-###can't get above to run
-
-
-
+#remove duplicate rows (from when data was not wiped)
+loggers<-loggers%>%distinct()
 
 # make wide
 loggers_wide <- loggers %>%
-  select(-raw) %>% # get rid of the raw column
-  pivot_wider(names_from="logger",values_from="calibrated") %>%
+  #select(-raw) %>% # get rid of the raw column
+  pivot_wider(names_from="logger",values_from="Temp") %>%
   arrange(datetime)
 
 # save the wide version of the file to CSV
@@ -252,21 +386,28 @@ loggers_wide <- loggers %>%
 
 Mcap.temp<-loggers_wide #make a copy
 
+
+
+
 ##############
 
 logger.df<-read.csv("UROP_logger_locations.csv")
 
 #melt the df and then add metadata
-Mcap.temp.2.melt<-melt(Mcap.temp.2, id.vars = c("datetime")) #melt
-  #rename cols
-Mcap.temp.2.melt<-rename(Mcap.temp.2.melt, temp.logger = "variable")
-Mcap.temp.2.melt<-rename(Mcap.temp.2.melt, temp = "value")
+
 
 #merge with metadata
-Mcap.temp.2.melt.meta<-merge(Mcap.temp.2.melt, logger.df)
+Mcap.temp.meta<-merge(Mcap.temp, logger.df)
+
+#keep cols you need
+Mcap.temp.meta<-Mcap.temp.meta[-c(9)]
+#melt
+Mcap.temp.meta.melt <- melt(Mcap.temp.meta, id = c("datetime","Big.tank","Tank","Temp.logger","Shade"))
+names(Mcap.temp.meta.melt)[6]<-"logger"
+names(Mcap.temp.meta.melt)[7]<-"temp"
 
 
-temp_plot<-ggplot(data=Mcap.temp.2.melt.meta, aes(x=datetime, y=temp, group = Shade, color=Shade)) +
+temp_plot<-ggplot(data=Mcap.temp.meta.melt, aes(x=datetime, y=temp, group = Shade, color=Shade)) +
   # geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
   #               width=0.1, show.legend = F)+
   #geom_point(aes(color=Treatment), size=4, show.legend = F)+
