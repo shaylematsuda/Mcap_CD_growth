@@ -169,15 +169,39 @@ qpcr <- qpcr %>%
   mutate(time.point = if_else(time == "Time1", "T0", "T2")) %>%
   select(-time)
 
-qpcr <- distinct(qpcr) %>%
-  mutate(frag.id = factor(extract_numeric(frag.id)))
+qpcr <- qpcr %>%
+  mutate(frag.id = factor(extract_numeric(frag.id))) %>%
+  distinct(.)
 
+# Join qPCR data with BW data
 df <- full_join(BW.data, qpcr)
 
+# Samples with qPCR data but NO BW data
+missing_bw <- anti_join(qpcr, BW.data)
+# Samples with BW data but NO qPCR data
+missing_qpcr <- anti_join(BW.data, qpcr) %>%
+   filter(time.point == "T0")
 
+
+# Number of rows corresponding to each genotype at each time point
 df %>%
-  filter(genotype == 851)  %>%
-  arrange(frag.id, time.point)
+  group_by(genotype, time.point) %>%
+  dplyr::summarize(n = n()) %>%
+  pivot_wider(names_from = time.point, values_from = n)
+
+
+# Any genotypes with different symbionts?
+df %>%
+  group_by(genotype) %>%
+  drop_na(dom) %>%
+  dplyr::summarize(sym = paste0(unique(dom), collapse = ",")) %>%
+  filter(nchar(sym) > 1)
+
+# Look at data for one genotype
+df %>%
+  dplyr::filter(genotype == 922)  %>%
+  arrange(frag.id, time.point) %>%
+  print(n = nrow(.))
 ```
 
 
