@@ -149,73 +149,35 @@ hist(BW.data$Dry.Weigh.g) #not normal
 #boxplot(BW.data$Dry.Weigh.g_log) #examine data
 
 
-# below, we are getting rid of columns we don't need anymore, and reorganizing the data by Fragment and clade/color and treatment. This way our time points will be in the same row)
-data_BW <- reshape(BW.data, timevar = "time.point", drop = c("mass.g","temp.c", "date","notes","Dry.weigh.g_log"), idvar=c("frag.id","treatment","light.level","genotype"), direction="wide")
+# Entering the tidyverse!!!
+BW.data <- tibble(BW.data)
+BW.data <- BW.data %>%
+  select(-mass.g, -temp.c, -notes, -date, -tratment, -treatment) 
 
-# This calculates the growth rate, if you look it takes Timepoint1 subtracts timepoint0 and divides by timepoint 0 and then divides by number of days , times 100
-data_BW$time1.growth <- (((data_BW$Dry.Weigh.g.T1 - data_BW$Dry.Weigh.g.T0)/data_BW$Dry.Weigh.g.T0)*100)/data_BW$days.T1 #calculate growth rate for time1
-data_BW$time2.growth <- (((data_BW$Dry.Weigh.g.T2 - data_BW$Dry.Weigh.g.T1)/data_BW$Dry.Weigh.g.T1)*100)/data_BW$days.T2 #calculate growth rate for time2
-
-
-# mean, standard dev, and sem
-time1_McapBW <-ddply(data_BW, .( treatment), summarize, 
-              N=length(na.omit(time1.growth)), 
-              mean = (mean(time1.growth, na.rm=TRUE)) , 
-              sd = sd(time1.growth, na.rm=TRUE) ,
-              sem = (sd(time1.growth,na.rm=T)/sqrt(N))) 
-time1_McapBW$Time <- "Time1"  
-
-time2_McapBW <-ddply(data_BW, .(treatment), summarize, 
-              N=length(na.omit(time2.growth)), 
-              mean = (mean(time2.growth, na.rm=TRUE)) ,  
-              sd = sd(time2.growth, na.rm=TRUE) ,
-              sem = (sd(time2.growth,na.rm=T)/sqrt(N))) 
-time2_McapBW$Time <- "Time2" 
-
-# #save this dataframe as "G"
-# G_McapA <- rbind(time1_McapBW[1,],time2_McapBW[1,])# Create a new column that we rename each row by treatment
-# G_McapH <- rbind(time1_McapBW[2,],time2_McapBW[2,])# Create a new column that we rename each row by treatment
-# G_Mcap<-rbind(G_McapA, G_McapH)
-# # Stress.Recovery column 
-#  # make new column that renames "time" to Stress or Recovery
-# G_Mcap$newtime = ifelse(G_Mcap$Time == "Time1", "Post-Stress", "Post-Recovery")
-# G_Mcap <- within(G_Mcap, newtime <- factor(newtime, levels = c("Post-Stress", "Post-Recovery"))) # Set order of levels so plots in right order
-#  
-
-BW<-rbind(time1_McapBW,time2_McapBW) 
-BW$code<-paste(BW$treatment,BW$Time)
-
-
-#this is an ugly plot:
-Mcap_BW_plot<-ggplot(data=BW, aes(x=Time, y=mean, group = treatment, color=treatment)) +
-  geom_errorbar(aes(ymin=mean-sem, ymax=mean+sem),
-                width=0.1, show.legend = T)+
-  geom_point(aes(color=treatment), size=4, show.legend = T)+  
-  geom_line(aes(color=treatment),linetype="dotted")+
-  #scale_color_manual(values=c("dodgerblue3", "darkred"))+
-   geom_point(shape = 1,size = 4,colour = "black")+
-  xlab("") + #Label the X Axis
-      #ylim(0, .6)+
-  theme_bw() + #Set the background color
-  theme(axis.line = element_line(color = 'black'), #Set the axes color
-        axis.title=element_text(size=14,face="bold"), #Set axis format
-        panel.border = element_blank(), #Set the border 
-        panel.grid.major = element_blank(), #Set the major gridlines
-        panel.grid.minor = element_blank(), #Set the minor gridlines
-        text = element_text(size=18),  # set element text
-        plot.background =element_blank(), #Set the plot background
-        legend.key = element_blank()) + #Set plot legend key
-  # theme(panel.grid.major = element_blank(), 
-  #       panel.grid.minor = element_blank(),
-  #       panel.background = element_rect(colour = "black", size=1))+
-        theme(aspect.ratio=1)+
-  ylab(expression(paste("% Change Dry.Weigh.g"))) +
-   ggtitle("M capitata BW")+
-  theme(plot.title = element_text(size=20, face = "italic", hjust=0.25));Mcap_BW_plot
-
-
+BW.data <- BW.data %>%
+  mutate(big.tank = factor(big.tank),
+         tank = factor(tank))
 ```
 
 # qPCR
+```{r}
+# tidyverse!
+qpcr <- read_csv("qPCR/qpcr_processed.csv")
+
+qpcr <- qpcr %>%
+  select(frag.id = Sample.Name, time, propD, dom = Dom, mix = Mix) %>%
+  mutate(time.point = if_else(time == "Time1", "T0", "T2")) %>%
+  select(-time)
+
+qpcr <- distinct(qpcr) %>%
+  mutate(frag.id = factor(extract_numeric(frag.id)))
+
+df <- full_join(BW.data, qpcr)
+
+
+df %>%
+  filter(genotype == 851)  %>%
+  arrange(frag.id, time.point)
+```
 
 
