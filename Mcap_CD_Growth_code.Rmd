@@ -28,5 +28,185 @@ require("dplyr")
 require("utils")
 library("reshape2") #data shaping
 library(lubridate)
+
+#load metadata
+geno.frag<-read.csv("UROP_metadata_colony.csv")
+geno.frag$genotype<-as.factor(as.character(geno.frag$genotype))
+geno.frag$frag.id<-as.factor(as.character(geno.frag$frag.id))
+
+shade.levels<-read.csv("shade.levels.csv")
+shade.levels$frag.id<-as.factor(as.character(shade.levels$frag.id))
+shade.levels$treatment<-as.factor(as.character(shade.levels$treatment))
+shade.levels$light.level<-as.factor((shade.levels$light.level))
+shade.levels<-unique(shade.levels) #remove dups
+
+
+geno_fragid<-geno.frag$frag.id
+shade.levels_fragid<-shade.levels$frag.id
+
+#diffs<-as.data.frame(setdiff( geno_fragid, shade.levels_fragid))
+
+metadata<-merge(shade.levels,geno.frag, by.x="frag.id",no.dups=T)
+
 ```
+BW: original code HP
+
+```{r}
+BW.data.T0 <-read.csv('Buoyant_weight/UROP_BW_T0_20171029.csv') 
+BW.data.T1 <-read.csv('Buoyant_weight/UROP_BW_T1_20171129.csv') 
+BW.data.T2 <-read.csv('Buoyant_weight/UROP_BW_T2_20180108.csv')
+BW.data<-rbind(BW.data.T0,BW.data.T1,BW.data.T2) #combine
+
+BW.data<-merge(BW.data, metadata, by.x="frag.id") 
+
+  BW_fragid<-BW.data$frag.id
+  meta_fragid<-metadata$frag.id
+  setdiff(BW_fragid, meta_fragid) #check what we lose, 142 144  73 283 217  cannot find genotype info in MO notes
+
+
+BW.data$frag.id<-as.factor(as.character(BW.data$frag.id))
+BW.data$temp.c<-as.numeric(BW.data$temp.c)
+BW.data$time.point<-as.factor(as.character(BW.data$time.point))
+
+BW <- BW.data$mass.g
+Temp <- BW.data$temp.C 
+
+
+#HP
+# load data 
+CalData<-read.csv('Buoyant_weight/Bouyant_weight_calibration_curve.csv', header=T, sep=",")
+#Data with Standard weights in grams in deionized water, saltwater, and the temp that they were measured at
+
+#plot relationship between temp and Standard in fresh and salt water
+plot(CalData$Temp, CalData$StandardSalt, col = 'red', ylab = 'Salt Weight (g)', xlab = 'Temp C')
+par(new=TRUE)
+plot(CalData$Temp, CalData$StandardFresh, col = 'blue',xaxt="n",yaxt="n",xlab="",ylab="")
+axis(4)
+mtext("'Fresh Weight (g)'",side=4,line=3)
+legend("topleft",col=c("red","blue"),lty=1,legend=c("Salt","Fresh"), bty = "n")
+
+#linear regression between temp and Standard
+#Salt water standard measures
+StandardSaltModel <- lm(CalData$StandardSalt~CalData$Temp)
+summary(StandardSaltModel)
+summary(StandardSaltModel)$r.squared
+StandardSaltModel$coef
+
+#Fresh water standard measures
+StandardFreshModel <- lm(CalData$StandardFresh~CalData$Temp)
+summary(StandardFreshModel)
+summary(StandardFreshModel)$r.squared
+StandardFreshModel$coef
+
+BW <- BW.data$mass.g
+Temp <- BW.data$temp.c 
+
+BWCalc_Mcap <- function(StandardAir= 39.092, Temp, BW, CoralDensity = 2.03){
+  #Parameters---------------------------------------------------------------
+  # StandardAir is the weight of the Standard in air (Default set at 39.092 grams weighed on balance)
+  # Temp is the temperature of the water during the coral measurement
+  # BW is the buoywant weight of the coral
+  # CoralDensity <- 2.03 #g cm-3, set aragonite density for Montipora from literature 
+  #Montipora Arag = 2.03 g cm-3 average from table 2 in Anthony 2003 Functional Ecology 17:246-259
+  
+
+ #Calculation------------------------------------------------------------
+  #Step 1: correct the Standard weights for temperature
+  # StandardFresh is the weight of the Standard in  fresh water at temp x
+  # StandardSalt is the weight of the Standard in salt water at temp x
+  
+  # This is based on a calibration curve for Standards weighed in fresh and salt water at many temps
+StandardFresh <- StandardFreshModel$coef[-1]*Temp + StandardFreshModel$coef[1] 
+StandardSalt <- StandardSaltModel$coef[-1]*Temp + StandardSaltModel$coef[1] 
+  
+  # Step 2: Use weight in air and freshwater of the  Standard to calculate
+  # the density of the Standard (Davies eq. 4)
+FreshDensity <- 1 #Fresh water has a density of 1 g/cm3
+StandardDensity <- FreshDensity/(1-(StandardFresh/StandardAir)) 
+  
+  # Step 3: Calculate the density of seawater using the density of the Standard
+  # (Spencer Davies eq. 3)
+SWDensity <- StandardDensity*(1-(StandardSalt/StandardAir))
+  
+  # Step 4: Calculate the dry weight of the coral (Davies eq. 1)
+CoralWeight <- BW/(1-(SWDensity/CoralDensity))
+  
+  return(CoralWeight) #returns coral dry weights in g
+}
+   
+BW.data$Dry.Weigh.g <- BWCalc_Mcap(BW=BW, Temp=Temp) #use function to calculate dry weight
+hist(BW.data$Dry.Weigh.g) #not normal
+ #BW.data$Dry.Weigh.g_log<-log10(BW.data$Dry.Weigh.g+1)
+ #hist(BW.data$Dry.Weigh.g_log) #better
+#boxplot(BW.data$Dry.Weigh.g_log) #examine data
+
+
+# below, we are getting rid of columns we don't need anymore, and reorganizing the data by Fragment and clade/color and treatment. This way our time points will be in the same row)
+data_BW <- reshape(BW.data, timevar = "time.point", drop = c("mass.g","temp.c", "date","notes","Dry.weigh.g_log"), idvar=c("frag.id","treatment","light.level","genotype"), direction="wide")
+
+# This calculates the growth rate, if you look it takes Timepoint1 subtracts timepoint0 and divides by timepoint 0 and then divides by number of days , times 100
+data_BW$time1.growth <- (((data_BW$Dry.Weigh.g.T1 - data_BW$Dry.Weigh.g.T0)/data_BW$Dry.Weigh.g.T0)*100)/data_BW$days.T1 #calculate growth rate for time1
+data_BW$time2.growth <- (((data_BW$Dry.Weigh.g.T2 - data_BW$Dry.Weigh.g.T1)/data_BW$Dry.Weigh.g.T1)*100)/data_BW$days.T2 #calculate growth rate for time2
+
+
+# mean, standard dev, and sem
+time1_McapBW <-ddply(data_BW, .( treatment), summarize, 
+              N=length(na.omit(time1.growth)), 
+              mean = (mean(time1.growth, na.rm=TRUE)) , 
+              sd = sd(time1.growth, na.rm=TRUE) ,
+              sem = (sd(time1.growth,na.rm=T)/sqrt(N))) 
+time1_McapBW$Time <- "Time1"  
+
+time2_McapBW <-ddply(data_BW, .(treatment), summarize, 
+              N=length(na.omit(time2.growth)), 
+              mean = (mean(time2.growth, na.rm=TRUE)) ,  
+              sd = sd(time2.growth, na.rm=TRUE) ,
+              sem = (sd(time2.growth,na.rm=T)/sqrt(N))) 
+time2_McapBW$Time <- "Time2" 
+
+# #save this dataframe as "G"
+# G_McapA <- rbind(time1_McapBW[1,],time2_McapBW[1,])# Create a new column that we rename each row by treatment
+# G_McapH <- rbind(time1_McapBW[2,],time2_McapBW[2,])# Create a new column that we rename each row by treatment
+# G_Mcap<-rbind(G_McapA, G_McapH)
+# # Stress.Recovery column 
+#  # make new column that renames "time" to Stress or Recovery
+# G_Mcap$newtime = ifelse(G_Mcap$Time == "Time1", "Post-Stress", "Post-Recovery")
+# G_Mcap <- within(G_Mcap, newtime <- factor(newtime, levels = c("Post-Stress", "Post-Recovery"))) # Set order of levels so plots in right order
+#  
+
+BW<-rbind(time1_McapBW,time2_McapBW) 
+BW$code<-paste(BW$treatment,BW$Time)
+
+
+#this is an ugly plot:
+Mcap_BW_plot<-ggplot(data=BW, aes(x=Time, y=mean, group = treatment, color=treatment)) +
+  geom_errorbar(aes(ymin=mean-sem, ymax=mean+sem),
+                width=0.1, show.legend = T)+
+  geom_point(aes(color=treatment), size=4, show.legend = T)+  
+  geom_line(aes(color=treatment),linetype="dotted")+
+  #scale_color_manual(values=c("dodgerblue3", "darkred"))+
+   geom_point(shape = 1,size = 4,colour = "black")+
+  xlab("") + #Label the X Axis
+      #ylim(0, .6)+
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border 
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  # theme(panel.grid.major = element_blank(), 
+  #       panel.grid.minor = element_blank(),
+  #       panel.background = element_rect(colour = "black", size=1))+
+        theme(aspect.ratio=1)+
+  ylab(expression(paste("% Change Dry.Weigh.g"))) +
+   ggtitle("M capitata BW")+
+  theme(plot.title = element_text(size=20, face = "italic", hjust=0.25));Mcap_BW_plot
+
+
+```
+
+
 

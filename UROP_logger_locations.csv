@@ -1,0 +1,17 @@
+Big.tank,Tank,Temp.logger,Light.logger,Shade
+13,1,13,logger_7277CAL,1_cloth
+13,2,13,logger_6379CAL,2_cloth
+13,3,13,logger_2488CAL,3_cloth
+13,4,13,logger_6377CAL,4_cloth
+14,5,14,logger_10959CAL,1_cloth
+14,6,14,logger_10957CAL,2_cloth
+14,7,14,logger_10958CAL,3_cloth
+14,8,14,logger_7274CAL,4_cloth
+16,9,16,logger_7278CAL,1_cloth
+16,10,16,logger_7279CAL,2_cloth
+16,11,16,logger_10956CAL,3_cloth
+16,12,16,logger_6378CAL,4_cloth
+17,13,17,logger_7280CAL,1_cloth
+17,14,17,logger_7272CAL,2_cloth
+17,15,17,logger_7276CAL,3_cloth
+17,16,17,logger_4803CAL,4_cloth

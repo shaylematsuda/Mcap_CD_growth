@@ -1,0 +1,580 @@
+frag.id,treatment,light.level
+1,One,Low Shade
+1,One,Low Shade
+1,One,Low Shade
+2,Zero,Natural
+2,Zero,Natural
+3,Three,High Shade
+3,Three,High Shade
+3,Three,High Shade
+4,Two,Medium Shade
+4,Two,Medium Shade
+4,Two,Medium Shade
+6,Zero,Natural
+6,Zero,Natural
+6,Zero,Natural
+7,One,Low Shade
+7,One,Low Shade
+7,One,Low Shade
+8,Three,High Shade
+8,Three,High Shade
+8,Three,High Shade
+9,Two,Medium Shade
+9,Two,Medium Shade
+10,Two,Medium Shade
+10,Two,Medium Shade
+10,Two,Medium Shade
+11,Zero,Natural
+11,Zero,Natural
+11,Zero,Natural
+12,Three,High Shade
+12,Three,High Shade
+12,Three,High Shade
+13,One,Low Shade
+13,One,Low Shade
+13,One,Low Shade
+14,Zero,Natural
+14,Zero,Natural
+14,Zero,Natural
+15,One,Low Shade
+15,One,Low Shade
+15,One,Low Shade
+16,Two,Medium Shade
+16,Two,Medium Shade
+16,Two,Medium Shade
+17,Three,High Shade
+17,Three,High Shade
+17,Three,High Shade
+20,Zero,Natural
+20,Zero,Natural
+20,Zero,Natural
+21,Two,Medium Shade
+21,Two,Medium Shade
+21,Two,Medium Shade
+24,Two,Medium Shade
+24,Two,Medium Shade
+24,Two,Medium Shade
+26,Zero,Natural
+26,Zero,Natural
+26,Zero,Natural
+27,Two,Medium Shade
+27,Two,Medium Shade
+27,Two,Medium Shade
+28,One,Low Shade
+28,One,Low Shade
+28,One,Low Shade
+29,Three,High Shade
+29,Three,High Shade
+29,Three,High Shade
+31,Zero,Natural
+31,Zero,Natural
+31,Zero,Natural
+32,One,Low Shade
+32,One,Low Shade
+32,One,Low Shade
+33,Two,Medium Shade
+33,Two,Medium Shade
+33,Two,Medium Shade
+34,Three,High Shade
+34,Three,High Shade
+34,Three,High Shade
+35,Zero,Natural
+35,Zero,Natural
+35,Zero,Natural
+36,One,Low Shade
+36,One,Low Shade
+36,One,Low Shade
+37,Two,Medium Shade
+37,Two,Medium Shade
+37,Two,Medium Shade
+38,Three,High Shade
+38,Three,High Shade
+38,Three,High Shade
+40,Three,High Shade
+40,Three,High Shade
+40,Three,High Shade
+41,Zero,Natural
+41,Zero,Natural
+41,Zero,Natural
+43,Zero,Natural
+43,Zero,Natural
+43,Zero,Natural
+44,One,Low Shade
+44,One,Low Shade
+44,One,Low Shade
+45,Two,Medium Shade
+45,Two,Medium Shade
+45,Two,Medium Shade
+46,Three,High Shade
+46,Three,High Shade
+46,Three,High Shade
+47,Zero,Natural
+47,Zero,Natural
+47,Zero,Natural
+48,One,Low Shade
+48,One,Low Shade
+48,One,Low Shade
+49,Two,Medium Shade
+49,Two,Medium Shade
+49,Two,Medium Shade
+50,Three,High Shade
+50,Three,High Shade
+50,Three,High Shade
+51,Two,Medium Shade
+51,Two,Medium Shade
+51,Two,Medium Shade
+52,Three,High Shade
+52,Three,High Shade
+52,Three,High Shade
+53,Zero,Natural
+53,Zero,Natural
+53,Zero,Natural
+54,Two,Medium Shade
+54,Two,Medium Shade
+54,Two,Medium Shade
+55,One,Low Shade
+55,One,Low Shade
+55,One,Low Shade
+56,Zero,Natural
+56,Zero,Natural
+56,Zero,Natural
+57,One,Low Shade
+57,One,Low Shade
+57,One,Low Shade
+58,Two,Medium Shade
+58,Two,Medium Shade
+58,Two,Medium Shade
+59,Three,High Shade
+59,Three,High Shade
+59,Three,High Shade
+64,One,Low Shade
+64,One,Low Shade
+64,One,Low Shade
+68,Three,High Shade
+68,Three,High Shade
+68,Three,High Shade
+69,One,Low Shade
+69,One,Low Shade
+69,One,Low Shade
+70,Zero,Natural
+70,Zero,Natural
+70,Zero,Natural
+73,One,Low Shade
+73,One,Low Shade
+73,One,Low Shade
+74,Zero,Natural
+74,Zero,Natural
+74,Zero,Natural
+75,Zero,Natural
+75,Zero,Natural
+75,Zero,Natural
+76,Three,High Shade
+76,Three,High Shade
+76,Three,High Shade
+78,Zero,Natural
+78,Zero,Natural
+78,Zero,Natural
+79,Two,Medium Shade
+79,Two,Medium Shade
+79,Two,Medium Shade
+80,Three,High Shade
+80,Three,High Shade
+80,Three,High Shade
+81,Two,Medium Shade
+81,Two,Medium Shade
+81,Two,Medium Shade
+82,One,Low Shade
+82,One,Low Shade
+82,One,Low Shade
+83,Zero,Natural
+83,Zero,Natural
+83,Zero,Natural
+84,One,Low Shade
+84,One,Low Shade
+84,One,Low Shade
+85,Two,Medium Shade
+85,Two,Medium Shade
+85,Two,Medium Shade
+86,Three,High Shade
+86,Three,High Shade
+86,Three,High Shade
+87,One,Low Shade
+87,One,Low Shade
+87,One,Low Shade
+88,Two,Medium Shade
+88,Two,Medium Shade
+88,Two,Medium Shade
+89,Three,High Shade
+89,Three,High Shade
+89,Three,High Shade
+97,Three,High Shade
+97,Three,High Shade
+97,Three,High Shade
+101,Three,High Shade
+101,Three,High Shade
+101,Three,High Shade
+102,Zero,Natural
+102,Zero,Natural
+102,Zero,Natural
+103,One,Low Shade
+103,One,Low Shade
+103,One,Low Shade
+104,Two,Medium Shade
+104,Two,Medium Shade
+104,Two,Medium Shade
+105,One,Low Shade
+105,One,Low Shade
+105,One,Low Shade
+106,Two,Medium Shade
+106,Two,Medium Shade
+106,Two,Medium Shade
+107,Zero,Natural
+107,Zero,Natural
+107,Zero,Natural
+108,Three,High Shade
+108,Three,High Shade
+108,Three,High Shade
+109,Zero,Natural
+109,Zero,Natural
+109,Zero,Natural
+110,One,Low Shade
+110,One,Low Shade
+110,One,Low Shade
+111,Two,Medium Shade
+111,Two,Medium Shade
+111,Two,Medium Shade
+112,Three,High Shade
+112,Three,High Shade
+112,Three,High Shade
+113,Zero,Natural
+113,Zero,Natural
+113,Zero,Natural
+114,One,Low Shade
+114,One,Low Shade
+114,One,Low Shade
+115,Two,Medium Shade
+115,Two,Medium Shade
+116,Three,High Shade
+116,Three,High Shade
+116,Three,High Shade
+117,Zero,Natural
+117,Zero,Natural
+117,Zero,Natural
+118,One,Low Shade
+118,One,Low Shade
+118,One,Low Shade
+120,Two,Medium Shade
+120,Two,Medium Shade
+120,Two,Medium Shade
+123,Zero,Natural
+123,Zero,Natural
+123,Zero,Natural
+124,Zero,Natural
+124,Zero,Natural
+124,Zero,Natural
+126,Zero,Natural
+126,Zero,Natural
+126,Zero,Natural
+127,One,Low Shade
+127,One,Low Shade
+127,One,Low Shade
+128,Two,Medium Shade
+128,Two,Medium Shade
+128,Two,Medium Shade
+129,Three,High Shade
+129,Three,High Shade
+129,Three,High Shade
+130,Zero,Natural
+130,Zero,Natural
+130,Zero,Natural
+131,One,Low Shade
+131,One,Low Shade
+131,One,Low Shade
+132,Two,Medium Shade
+132,Two,Medium Shade
+132,Two,Medium Shade
+133,Three,High Shade
+133,Three,High Shade
+133,Three,High Shade
+134,Zero,Natural
+134,Zero,Natural
+135,One,Low Shade
+135,One,Low Shade
+136,Two,Medium Shade
+136,Two,Medium Shade
+136,Two,Medium Shade
+137,Three,High Shade
+137,Three,High Shade
+138,Zero,Natural
+138,Zero,Natural
+138,Zero,Natural
+139,One,Low Shade
+139,One,Low Shade
+139,One,Low Shade
+140,Two,Medium Shade
+140,Two,Medium Shade
+140,Two,Medium Shade
+141,Three,High Shade
+141,Three,High Shade
+141,Three,High Shade
+142,One,Low Shade
+142,One,Low Shade
+142,One,Low Shade
+144,Two,Medium Shade
+144,Two,Medium Shade
+144,Two,Medium Shade
+146,Two,Medium Shade
+146,Two,Medium Shade
+146,Two,Medium Shade
+147,One,Low Shade
+147,One,Low Shade
+148,Zero,Natural
+148,Zero,Natural
+148,Zero,Natural
+149,Three,High Shade
+149,Three,High Shade
+149,Three,High Shade
+150,Two,Medium Shade
+150,Two,Medium Shade
+150,Two,Medium Shade
+151,Three,High Shade
+151,Three,High Shade
+151,Three,High Shade
+153,One,Low Shade
+153,One,Low Shade
+153,One,Low Shade
+154,Two,Medium Shade
+154,Two,Medium Shade
+154,Two,Medium Shade
+155,One,Low Shade
+155,One,Low Shade
+155,One,Low Shade
+156,Zero,Natural
+156,Zero,Natural
+156,Zero,Natural
+157,Three,High Shade
+157,Three,High Shade
+157,Three,High Shade
+158,Three,High Shade
+158,Three,High Shade
+158,Three,High Shade
+159,Two,Medium Shade
+159,Two,Medium Shade
+159,Two,Medium Shade
+160,One,Low Shade
+160,One,Low Shade
+160,One,Low Shade
+161,Zero,Natural
+161,Zero,Natural
+161,Zero,Natural
+186,Zero,Natural
+186,Zero,Natural
+186,Zero,Natural
+187,Three,High Shade
+187,Three,High Shade
+187,Three,High Shade
+191,Zero,Natural
+191,Zero,Natural
+191,Zero,Natural
+192,Two,Medium Shade
+192,Two,Medium Shade
+192,Two,Medium Shade
+195,One,Low Shade
+195,One,Low Shade
+196,Two,Medium Shade
+196,Two,Medium Shade
+196,Two,Medium Shade
+198,Zero,Natural
+198,Zero,Natural
+198,Zero,Natural
+199,One,Low Shade
+199,One,Low Shade
+199,One,Low Shade
+200,Two,Medium Shade
+200,Two,Medium Shade
+200,Two,Medium Shade
+201,Three,High Shade
+201,Three,High Shade
+201,Three,High Shade
+202,Zero,Natural
+202,Zero,Natural
+202,Zero,Natural
+203,One,Low Shade
+203,One,Low Shade
+203,One,Low Shade
+204,Two,Medium Shade
+204,Two,Medium Shade
+204,Two,Medium Shade
+205,Three,High Shade
+205,Three,High Shade
+205,Three,High Shade
+206,Zero,Natural
+206,Zero,Natural
+208,One,Low Shade
+208,One,Low Shade
+208,One,Low Shade
+210,Zero,Natural
+210,Zero,Natural
+210,Zero,Natural
+212,Two,Medium Shade
+212,Two,Medium Shade
+213,Three,High Shade
+213,Three,High Shade
+213,Three,High Shade
+218,Three,High Shade
+218,Three,High Shade
+218,Three,High Shade
+219,Two,Medium Shade
+219,Two,Medium Shade
+219,Two,Medium Shade
+220,One,Low Shade
+220,One,Low Shade
+220,One,Low Shade
+221,Zero,Natural
+221,Zero,Natural
+221,Zero,Natural
+222,Zero,Natural
+222,Zero,Natural
+222,Zero,Natural
+223,One,Low Shade
+223,One,Low Shade
+223,One,Low Shade
+224,Two,Medium Shade
+224,Two,Medium Shade
+224,Two,Medium Shade
+225,Three,High Shade
+225,Three,High Shade
+225,Three,High Shade
+229,Three,High Shade
+229,Three,High Shade
+229,Three,High Shade
+230,Zero,Natural
+230,Zero,Natural
+230,Zero,Natural
+232,Three,High Shade
+232,Three,High Shade
+232,Three,High Shade
+233,Two,Medium Shade
+233,Two,Medium Shade
+233,Two,Medium Shade
+234,Three,High Shade
+234,Three,High Shade
+234,Three,High Shade
+235,Two,Medium Shade
+235,Two,Medium Shade
+235,Two,Medium Shade
+236,One,Low Shade
+236,One,Low Shade
+237,Zero,Natural
+237,Zero,Natural
+237,Zero,Natural
+238,Zero,Natural
+238,Zero,Natural
+238,Zero,Natural
+240,One,Low Shade
+240,One,Low Shade
+240,One,Low Shade
+241,Two,Medium Shade
+241,Two,Medium Shade
+241,Two,Medium Shade
+242,Zero,Natural
+242,Zero,Natural
+242,Zero,Natural
+243,One,Low Shade
+243,One,Low Shade
+243,One,Low Shade
+244,Two,Medium Shade
+244,Two,Medium Shade
+244,Two,Medium Shade
+245,Three,High Shade
+245,Three,High Shade
+245,Three,High Shade
+247,Zero,Natural
+247,Zero,Natural
+247,Zero,Natural
+248,One,Low Shade
+248,One,Low Shade
+248,One,Low Shade
+249,Two,Medium Shade
+249,Two,Medium Shade
+251,Zero,Natural
+251,Zero,Natural
+251,Zero,Natural
+253,Two,Medium Shade
+253,Two,Medium Shade
+253,Two,Medium Shade
+254,Three,High Shade
+254,Three,High Shade
+254,Three,High Shade
+256,Zero,Natural
+256,Zero,Natural
+256,Zero,Natural
+257,One,Low Shade
+257,One,Low Shade
+257,One,Low Shade
+258,Two,Medium Shade
+258,Two,Medium Shade
+258,Two,Medium Shade
+259,Three,High Shade
+259,Three,High Shade
+259,Three,High Shade
+260,Zero,Natural
+260,Zero,Natural
+260,Zero,Natural
+261,One,Low Shade
+261,One,Low Shade
+261,One,Low Shade
+262,Two,Medium Shade
+262,Two,Medium Shade
+262,Two,Medium Shade
+263,Three,High Shade
+263,Three,High Shade
+263,Three,High Shade
+265,Three,High Shade
+265,Three,High Shade
+265,Three,High Shade
+268,Three,High Shade
+268,Three,High Shade
+268,Three,High Shade
+269,Zero,Natural
+269,Zero,Natural
+269,Zero,Natural
+270,One,Low Shade
+270,One,Low Shade
+270,One,Low Shade
+271,Two,Medium Shade
+271,Two,Medium Shade
+271,Two,Medium Shade
+272,Two,Medium Shade
+272,Two,Medium Shade
+272,Two,Medium Shade
+273,Three,High Shade
+273,Three,High Shade
+273,Three,High Shade
+274,Zero,Natural
+274,Zero,Natural
+274,Zero,Natural
+275,One,Low Shade
+275,One,Low Shade
+275,One,Low Shade
+276,Three,High Shade
+276,Three,High Shade
+277,Two,Medium Shade
+277,Two,Medium Shade
+277,Two,Medium Shade
+278,One,Low Shade
+278,One,Low Shade
+278,One,Low Shade
+279,Zero,Natural
+279,Zero,Natural
+279,Zero,Natural
+280,Zero,Natural
+280,Zero,Natural
+280,Zero,Natural
+283,Three,High Shade
+283,Three,High Shade
+283,Three,High Shade
+286,One,Low Shade
+288,Two,Medium Shade
+288,Two,Medium Shade
+288,Two,Medium Shade
