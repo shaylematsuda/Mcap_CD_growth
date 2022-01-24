@@ -20,7 +20,7 @@ library(grid) #install.packages(grid)
 ```{r}
 # List Mermaid Reef and Sandy Cay Reef Symbiodiniaceae data files
 plates <- list.files(path = "qPCR", pattern = ".csv", full.names = TRUE)
-plates
+plates <- plates[-1]
 # Read in data and calculate target ratios
 df <- steponeR(files = plates, 
                delim = ",", 
@@ -80,7 +80,7 @@ ggplot(qpcr, aes(x = propD)) +
 
 qpcr %>%
   group_by(Dom, time) %>%
-  summarize(n = n())
+  dplyr::summarize(n = n())
 
 ```
 
