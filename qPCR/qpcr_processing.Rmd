@@ -1,0 +1,90 @@
+---
+title: "qPCR data processing"
+output: html_document
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Load Libraries 
+```{r}
+library(devtools)   # install.packages("devtools")
+library(steponeR) # install_github("jrcunning/steponeR")
+library(tidyverse) # install.packages("tidyverse")
+library(cowplot) #install.packages("cowplot)
+library(grid) #install.packages(grid)
+```
+
+
+# Importing raw qPCR data from Quant Studio Design and Analysis Software 
+```{r}
+# List Mermaid Reef and Sandy Cay Reef Symbiodiniaceae data files
+plates <- list.files(path = "qPCR", pattern = ".csv", full.names = TRUE)
+plates
+# Read in data and calculate target ratios
+df <- steponeR(files = plates, 
+               delim = ",", 
+               target.ratios = "C.D", 
+               fluor.norm = list(C = 2.268, D = 0),
+               copy.number = list(C = 33, D = 3),
+               ploidy = list(C = 1, D = 1),
+               extract = list(C = 0.813, D = 0.813))
+qpcr <- df$result
+# View data
+head(qpcr)
+```
+
+```{r}
+## Remove positive and negative controls from qPCR data
+qpcr <- qpcr[grep("POS", qpcr$Sample.Name, fixed = T, invert = T), ]
+qpcr <- qpcr[grep("NTC", qpcr$Sample.Name, fixed = T, invert = T), ]
+
+
+## Filter out detections without two technical replicates
+qpcr$fail <- ifelse(qpcr$C.reps < 2 & qpcr$D.reps < 2, TRUE, FALSE)
+fails <- qpcr[qpcr$fail==TRUE, ]
+qpcr <- qpcr[which(qpcr$fail==FALSE),]
+## Set C:D ratio to -Inf (when only D) and Inf (when only C)
+qpcr$C.D[which(qpcr$C.reps < 2)] <- -Inf
+qpcr$C.D[which(qpcr$D.reps < 2)] <- Inf
+## Calculate Proportion C and Proportion D
+qpcr$propC <- qpcr$C.D / (qpcr$C.D + 1)
+qpcr$propD <- 1 - qpcr$propC
+qpcr$propD[which(qpcr$C.D==-Inf)] <- 1
+qpcr$propC[which(qpcr$C.D==-Inf)] <- 0
+qpcr$propD[which(qpcr$C.D==Inf)] <- 0
+qpcr$propC[which(qpcr$C.D==Inf)] <- 1
+## Categorize each sample as C-dominated or D-dominated
+qpcr$Dom <- ifelse(qpcr$propC>qpcr$propD, "C", "D")
+## Define category for symbiont mixture
+qpcr$Mix <- factor(ifelse(qpcr$propC>qpcr$propD, 
+                          ifelse(qpcr$propD!=0, "CD", "C"), 
+                          ifelse(qpcr$propD>qpcr$propC, 
+                                 ifelse(qpcr$propC!=0, "DC", "D"), NA)), 
+                   levels = c("C", "CD", "DC", "D"))
+head(qpcr)
+
+hist(qpcr$propD)
+```
+
+
+```{r}
+qpcr <- tibble(qpcr) %>%
+  mutate(time = str_extract(File.Name, "Time."))
+
+
+ggplot(qpcr, aes(x = propD)) +
+  geom_histogram() +
+  facet_grid(~time)
+
+
+qpcr %>%
+  group_by(Dom, time) %>%
+  summarize(n = n())
+
+```
+
+```{r}
+write_csv(qpcr, path = "qPCR/qpcr_processed.csv")
+```
+
