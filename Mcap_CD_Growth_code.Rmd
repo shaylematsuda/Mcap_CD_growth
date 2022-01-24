@@ -12,9 +12,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Mcap CD growth experiment: Buoyant Weight and qPCR
 
-load in libraries
-
-
+#Buoyant WEIGHT
 ```{r}
 #rm(list=ls()) # removes all prior objects
 
@@ -31,22 +29,32 @@ library(lubridate)
 
 #load metadata
 geno.frag<-read.csv("UROP_metadata_colony.csv")
-geno.frag$genotype<-as.factor(as.character(geno.frag$genotype))
-geno.frag$frag.id<-as.factor(as.character(geno.frag$frag.id))
+  geno.frag$genotype<-as.factor(as.character(geno.frag$genotype))
+  geno.frag$frag.id<-as.factor(as.character(geno.frag$frag.id))
 
+#load shade levels
 shade.levels<-read.csv("shade.levels.csv")
-shade.levels$frag.id<-as.factor(as.character(shade.levels$frag.id))
-shade.levels$treatment<-as.factor(as.character(shade.levels$treatment))
-shade.levels$light.level<-as.factor((shade.levels$light.level))
-shade.levels<-unique(shade.levels) #remove dups
+  shade.levels$frag.id<-as.factor(as.character(shade.levels$frag.id))
+  shade.levels$treatment<-as.factor(as.character(shade.levels$treatment))
+  shade.levels$light.level<-as.factor((shade.levels$light.level))
+  shade.levels<-unique(shade.levels) #remove dups
 
+  # geno_fragid<-geno.frag$frag.id               #Check for missing data
+  # shade.levels_fragid<-shade.levels$frag.id
+  #diffs<-as.data.frame(setdiff( geno_fragid, shade.levels_fragid))
+  metadata<-merge(shade.levels,geno.frag, by.x="frag.id",no.dups=T)
 
-geno_fragid<-geno.frag$frag.id
-shade.levels_fragid<-shade.levels$frag.id
+#add in depth data
+geno.depth<-read.csv("UROP_geno_Depth.csv")
+  # meta_genoID<-metadata$genotype        ##### Check for missing data
+  # depth_genoID<-geno.depth$genotype
+  #diffs<-as.data.frame(setdiff(meta_genoID, depth_genoID)) # no depth data for 912, 916, 909, 911, 910, 922, 920
+  metadata<-merge(metadata,geno.depth, by.x="genotype")
 
-#diffs<-as.data.frame(setdiff( geno_fragid, shade.levels_fragid))
+# add tank meta
+tank<-read.csv("UROP_frag_tank.csv")
 
-metadata<-merge(shade.levels,geno.frag, by.x="frag.id",no.dups=T)
+metadata<-merge(metadata,tank, by.x="frag.id")
 
 ```
 BW: original code HP
@@ -208,5 +216,6 @@ Mcap_BW_plot<-ggplot(data=BW, aes(x=Time, y=mean, group = treatment, color=treat
 
 ```
 
+# qPCR
 
 
