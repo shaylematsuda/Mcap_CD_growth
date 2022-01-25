@@ -148,7 +148,6 @@ hist(BW.data$Dry.Weigh.g) #not normal
  #hist(BW.data$Dry.Weigh.g_log) #better
 #boxplot(BW.data$Dry.Weigh.g_log) #examine data
 
-
 # Entering the tidyverse!!!
 BW.data <- tibble(BW.data)
 BW.data <- BW.data %>%
@@ -178,10 +177,10 @@ df <- full_join(BW.data, qpcr)
 
 # Samples with qPCR data but NO BW data
 missing_bw <- anti_join(qpcr, BW.data)
+
 # Samples with BW data but NO qPCR data
 missing_qpcr <- anti_join(BW.data, qpcr) %>%
    filter(time.point == "T0")
-
 
 # Number of rows corresponding to each genotype at each time point
 df %>%
