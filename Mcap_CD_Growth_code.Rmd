@@ -63,9 +63,9 @@ BW: original code HP
 BW.data.T0 <-read.csv('Buoyant_weight/UROP_BW_T0_20171029.csv') 
 BW.data.T1 <-read.csv('Buoyant_weight/UROP_BW_T1_20171129.csv') 
 BW.data.T2 <-read.csv('Buoyant_weight/UROP_BW_T2_20180108.csv')
-BW.data<-rbind(BW.data.T0,BW.data.T1,BW.data.T2) #combine
+BW.data <- rbind(BW.data.T0, BW.data.T1, BW.data.T2) #combine
 
-BW.data<-merge(BW.data, metadata, by.x="frag.id") 
+BW.data<-merge(BW.data, metadata, by.x= "frag.id") 
 
   BW_fragid<-BW.data$frag.id
   meta_fragid<-metadata$frag.id
@@ -160,20 +160,35 @@ BW.data <- BW.data %>%
 
 # qPCR
 ```{r}
-# tidyverse!
+# Read in and tidy processed qPCR data
 qpcr <- read_csv("qPCR/qpcr_processed.csv")
 
 qpcr <- qpcr %>%
-  select(frag.id = Sample.Name, time, propD, dom = Dom, mix = Mix) %>%
+  select(frag.id, time, propD, dom = Dom, mix = Mix) %>%
   mutate(time.point = if_else(time == "Time1", "T0", "T2")) %>%
   select(-time)
 
-qpcr <- qpcr %>%
-  mutate(frag.id = factor(extract_numeric(frag.id))) %>%
-  distinct(.)
-
-# Join qPCR data with BW data
+# Join qPCR data with BW data and sample metadata
 df <- full_join(BW.data, qpcr)
+
+# Number of rows corresponding to each genotype at each time point
+df %>%
+  group_by(genotype, time.point) %>%
+  dplyr::summarize(n = n()) %>%
+  pivot_wider(names_from = time.point, values_from = n)
+
+# Colony 867 has 8 frags associated with it--- change frags 47-50 to genotype 999
+df <- df %>%
+  mutate(genotype = as.character(genotype)) %>%
+  mutate(genotype = if_else(frag.id %in% c("47", "48", "49", "50"), "999", genotype)) %>%
+  mutate(genotype = factor(genotype))
+
+
+
+df %>% filter(frag.id == 283)
+BW.data.T0 %>% filter(frag.id == 283)
+
+
 
 # Samples with qPCR data but NO BW data
 missing_bw <- anti_join(qpcr, BW.data)
@@ -182,11 +197,16 @@ missing_bw <- anti_join(qpcr, BW.data)
 missing_qpcr <- anti_join(BW.data, qpcr) %>%
    filter(time.point == "T0")
 
+<<<<<<< HEAD
 # Number of rows corresponding to each genotype at each time point
 df %>%
   group_by(genotype, time.point) %>%
   dplyr::summarize(n = n()) %>%
   pivot_wider(names_from = time.point, values_from = n)
+=======
+
+
+>>>>>>> 1da7fd4e9b7d362d593b73c6885c5caf534fd1de
 
 
 # Any genotypes with different symbionts?
@@ -198,7 +218,7 @@ df %>%
 
 # Look at data for one genotype
 df %>%
-  dplyr::filter(genotype == 922)  %>%
+  dplyr::filter(genotype == 867)  %>%
   arrange(frag.id, time.point) %>%
   print(n = nrow(.))
 ```
