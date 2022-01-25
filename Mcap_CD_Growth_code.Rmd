@@ -46,6 +46,7 @@ shade.levels<-read.csv("shade.levels.csv")
 
 #add in depth data
 geno.depth <- read.csv("UROP_geno_Depth.csv")
+geno.depth$genotype <- as.factor(as.character(geno.depth$genotype))
   # meta_genoID<-metadata$genotype        ##### Check for missing data
   # depth_genoID<-geno.depth$genotype
   #diffs<-as.data.frame(setdiff(meta_genoID, depth_genoID)) # no depth data for 912, 916, 909, 911, 910, 922, 920
@@ -57,8 +58,13 @@ tank$frag.id <- as.factor(as.character(tank$frag.id))
 
 metadata <- full_join(shade.levels, geno.frag)
 metadata <- full_join(metadata, tank)
+metadata <- full_join(metadata, geno.depth)
+metadata <- as_tibble(metadata)
 
-metadata <- metadata %>% select(-treatment, -tratment)
+metadata <- metadata %>% 
+  select(-treatment, -tratment) %>%
+  mutate(depth.m = replace_na(depth.m, "unknown")) %>%
+  drop_na(light.level)
 ```
 BW: original code HP
 
