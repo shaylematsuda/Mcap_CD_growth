@@ -266,6 +266,23 @@ df <- df %>%
   ungroup()
 ```
 
+# mortality
+```{r}
+df.test<-df
+
+# load df
+mort<-read_csv("UROP_morality.csv")
+mort$frag.id <- as.factor(as.character(mort$frag.id))
+
+mort <- as_tibble(mort)
+mort<-drop_na(mort)
+mort2<-pivot_wider(mort, names_from = time.point, values_from = mortality, )
+
+metadata <- full_join(metadata, mort2) # we are missing some values
+
+```
+
+
 # Save cleaned dataset to file
 ```{r}
 write_csv(df, "all_data_cleaned.csv")
