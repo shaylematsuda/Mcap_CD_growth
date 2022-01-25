@@ -78,6 +78,9 @@ dups <- qpcr %>%
 qpcr <- qpcr %>%
   slice(-c(288, 185, 141, 63))
 
+# save raw version of data
+qpcr_raw <- qpcr
+
 # Select columns to keep
 qpcr <- qpcr %>%
   select(frag.id, time, propC, propD, Dom, Mix)
@@ -100,5 +103,21 @@ qpcr %>%
 ```{r}
 # Write processed qPCR data to file
 write_csv(qpcr, path = "qPCR/qpcr_processed.csv")
+```
+
+
+# Colony pre-screening biopsies
+```{r}
+# List qPCR data files for experimental fragments
+plate0 <- list.files(path = "qPCR", pattern = "UROP_qPCR_genotypes.*", full.names = TRUE)
+# Read in data and calculate target ratios
+import <- steponeR(files = plate0, 
+               delim = ",", 
+               target.ratios = "C.D", 
+               fluor.norm = list(C = 2.268, D = 0),
+               copy.number = list(C = 33, D = 3),
+               ploidy = list(C = 1, D = 1),
+               extract = list(C = 0.813, D = 0.813))
+qpcr0 <- import$result
 ```
 
