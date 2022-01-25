@@ -26,7 +26,7 @@ require("dplyr")
 require("utils")
 library("reshape2") #data shaping
 library(lubridate)
-
+library (tidyverse)
 #load metadata
 geno.frag<-read.csv("UROP_metadata_colony.csv")
   geno.frag$genotype<-as.factor(as.character(geno.frag$genotype))
