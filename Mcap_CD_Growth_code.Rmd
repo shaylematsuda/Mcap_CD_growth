@@ -49,7 +49,7 @@ geno.depth <- read.csv("UROP_geno_Depth.csv")
   # meta_genoID<-metadata$genotype        ##### Check for missing data
   # depth_genoID<-geno.depth$genotype
   #diffs<-as.data.frame(setdiff(meta_genoID, depth_genoID)) # no depth data for 912, 916, 909, 911, 910, 922, 920
-  metadata<-merge(metadata,geno.depth, by.x="genotype")
+  #metadata<-merge(metadata,geno.depth, by.x="genotype")
 
 # add tank meta
 tank <- read.csv("UROP_frag_tank.csv")
