@@ -42,20 +42,23 @@ shade.levels<-read.csv("shade.levels.csv")
   # geno_fragid<-geno.frag$frag.id               #Check for missing data
   # shade.levels_fragid<-shade.levels$frag.id
   #diffs<-as.data.frame(setdiff( geno_fragid, shade.levels_fragid))
-  metadata<-merge(shade.levels,geno.frag, by.x="frag.id",no.dups=T)
+  #metadata<-merge(shade.levels,geno.frag, by.x="frag.id",no.dups=T)
 
 #add in depth data
-geno.depth<-read.csv("UROP_geno_Depth.csv")
+geno.depth <- read.csv("UROP_geno_Depth.csv")
   # meta_genoID<-metadata$genotype        ##### Check for missing data
   # depth_genoID<-geno.depth$genotype
   #diffs<-as.data.frame(setdiff(meta_genoID, depth_genoID)) # no depth data for 912, 916, 909, 911, 910, 922, 920
   metadata<-merge(metadata,geno.depth, by.x="genotype")
 
 # add tank meta
-tank<-read.csv("UROP_frag_tank.csv")
+tank <- read.csv("UROP_frag_tank.csv")
+tank$frag.id <- as.factor(as.character(tank$frag.id))
 
-metadata<-merge(metadata,tank, by.x="frag.id")
+metadata <- full_join(shade.levels, geno.frag)
+metadata <- full_join(metadata, tank)
 
+metadata <- metadata %>% select(-treatment, -tratment)
 ```
 BW: original code HP
 
@@ -151,11 +154,7 @@ hist(BW.data$Dry.Weigh.g) #not normal
 # Entering the tidyverse!!!
 BW.data <- tibble(BW.data)
 BW.data <- BW.data %>%
-  select(-mass.g, -temp.c, -notes, -date, -tratment, -treatment) 
-
-BW.data <- BW.data %>%
-  mutate(big.tank = factor(big.tank),
-         tank = factor(tank))
+  select(-mass.g, -temp.c, -notes, -date) 
 ```
 
 # qPCR
@@ -165,11 +164,20 @@ qpcr <- read_csv("qPCR/qpcr_processed.csv")
 
 qpcr <- qpcr %>%
   select(frag.id, time, propD, dom = Dom, mix = Mix) %>%
-  mutate(time.point = if_else(time == "Time1", "T0", "T2")) %>%
+  mutate(time.point = if_else(time == "Time1", "T0", "T2"),
+         frag.id = factor(frag.id)) %>%
   select(-time)
 
-# Join qPCR data with BW data and sample metadata
+# Join qPCR data with metadata
+qpcr <- full_join(qpcr, metadata)
+qpcr %>% filter(is.na(genotype)) %>% # 39 frags with qPCR data but no associated metadata (genotype, etc.).... drop these
+  print(n = nrow(.))
+
 df <- full_join(BW.data, qpcr)
+qpcr %>% filter(is.na(genotype))
+
+BW.data %>% filter(frag.id == 207)
+metadata %>% filter(frag.id == 207)
 
 # Number of rows corresponding to each genotype at each time point
 df %>%
@@ -183,10 +191,9 @@ df <- df %>%
   mutate(genotype = if_else(frag.id %in% c("47", "48", "49", "50"), "999", genotype)) %>%
   mutate(genotype = factor(genotype))
 
+# Delete genotype 874 (only 1 frag measured once)
+df <- df %>% filter(!genotype == 874)
 
-
-df %>% filter(frag.id == 283)
-BW.data.T0 %>% filter(frag.id == 283)
 
 
 
