@@ -174,61 +174,101 @@ qpcr <- qpcr %>%
          frag.id = factor(frag.id)) %>%
   select(-time)
 
-# Join qPCR data with metadata
-qpcr <- full_join(qpcr, metadata)
-qpcr %>% filter(is.na(genotype)) %>% # 39 frags with qPCR data but no associated metadata (genotype, etc.).... drop these
-  print(n = nrow(.))
-
+# Join qPCR data with BW data
 df <- full_join(BW.data, qpcr)
-qpcr %>% filter(is.na(genotype))
-
-BW.data %>% filter(frag.id == 207)
-metadata %>% filter(frag.id == 207)
-
-# Number of rows corresponding to each genotype at each time point
-df %>%
-  group_by(genotype, time.point) %>%
-  dplyr::summarize(n = n()) %>%
-  pivot_wider(names_from = time.point, values_from = n)
-
-# Colony 867 has 8 frags associated with it--- change frags 47-50 to genotype 999
-df <- df %>%
-  mutate(genotype = as.character(genotype)) %>%
-  mutate(genotype = if_else(frag.id %in% c("47", "48", "49", "50"), "999", genotype)) %>%
-  mutate(genotype = factor(genotype))
+# frags with qPCR data but no BW data or metadata
+df %>% filter(is.na(Dry.Weigh.g)) %>% print(n = nrow(.))
 
 # Delete genotype 874 (only 1 frag measured once)
-df <- df %>% filter(!genotype == 874)
+df <- df %>% filter(!genotype == 874 | is.na(genotype))
 
-
-
-
-# Samples with qPCR data but NO BW data
+# Samples with qPCR data but NO BW data --- n=38 (these were frags that died before experiment)
 missing_bw <- anti_join(qpcr, BW.data)
 
-# Samples with BW data but NO qPCR data
+# Samples with BW data but NO qPCR data at T0 --- n=43 (these were likely failed qPCRs)
 missing_qpcr <- anti_join(BW.data, qpcr) %>%
    filter(time.point == "T0")
+#inner_join(missing_qpcr, df)
+#df %>% filter(is.na(propD), time.point == "T0")
 
-# Number of rows corresponding to each genotype at each time point
-df %>%
-  group_by(genotype, time.point) %>%
-  dplyr::summarize(n = n()) %>%
-  pivot_wider(names_from = time.point, values_from = n)
+# Remove all samples with no BW data
+df <- df %>%
+  filter(!is.na(Dry.Weigh.g))
+```
 
-
-# Any genotypes with different symbionts?
+# Fill in missing symbiont data
+```{r}
+# Sometimes missing symbiont data for frags where qPCR failed -- assign dominant symbiont based on other frags of same geno. First -- check whether any genotypes showed variation in dominant symbiont across frags?
 df %>%
   group_by(genotype) %>%
   drop_na(dom) %>%
   dplyr::summarize(sym = paste0(unique(dom), collapse = ",")) %>%
   filter(nchar(sym) > 1)
 
-# Look at data for one genotype
+# Genotype 864 = frags 20, 21. -- each amped once as C and once as D
+# frag20 T2 had poor amplification (throw away) -- T0 showed D. 
+# frag21 T0 had "A" and "B" run with diff. dom syms... which is right? Use D bc frag20 had D?  or throw away?
+# 864 screening biopsy was 90% D
+# could switch this colony to all D....
+
 df %>%
-  dplyr::filter(genotype == 867)  %>%
+  dplyr::filter(genotype == "864")  %>%
   arrange(frag.id, time.point) %>%
   print(n = nrow(.))
+
+# Genotype 867B = frags 47, 48, 49, 50.
+# 47=C@T2 ----healthy at T2
+# 48=D@T0 ----dead3 by T2
+# 49=C@T2 ----dead2 by T2
+# 50=D@T0 ----dead5 by T2
+# screening biopsy for '867' was D... but was this same colony as 867B?
+# If going with T0 data, could label this as a D colony, but weird that T2 samples were both C....shuffling?
+# Call this a D colony, but if outlier/weird, probly throw away...
+
+# Genotype 868 = frags 109, 110, 111, 112
+# all have pretty even mixtures but all C-dom except 112@T0 was D-dom.... but only 58% D. qPCR data looks good.
+# ...MIXED
+# label this a D for now... D could be defined as morethan background levels of D  / including these mixed colonies
+
+# Genotype 880 = frag 24 only. 90%D@T0, 53%C@T2.....
+# ...MIXED
+
+# Genotype 912 = frags 51, 52, 53, 64
+# 53 and 64 are 98% D.
+# 51 is 100%D@T0, and 100%C@T2.... qPCR data better for the C sample than the D sample...
+# no colony screening sample for this genotype
+# could label as D colony
+
+# Genotype 922 = frags 70, 84, 85, 86
+# 70 is 98%D@T0, 100%C@T2.
+# 85 is 96%D@T2
+# no colony screening sample
+
+# Going to label all these genotypes as D's for now
+genos <- c("864", "867B", "868", "880", "912", "922")
+df <- df %>%
+  mutate(dom = if_else(genotype %in% genos, "D", dom))
+
+# Are any genotypes entirely missing symbiont data?
+df %>%
+  group_by(genotype) %>%
+  summarize(dom = !any(!is.na(dom))) %>%
+  filter(dom)  
+# Yes, genotype 894 has only one fragment (265), and it has no qPCR data.
+# Parent colony screening biopsy for 894 was C, so going to label this as C (Mariah's notes also say frag 265 was setup as a brown C colony).
+df <- df %>%
+  mutate(dom = if_else(genotype == "894", "C", dom))
+
+
+df <- df %>%
+  group_by(genotype) %>%
+  mutate(dom = replace_na(dom, unique(dom[!is.na(dom)]))) %>%
+  ungroup()
+```
+
+# Save cleaned dataset to file
+```{r}
+write_csv(df, "all_data_cleaned.csv")
 ```
 
 
