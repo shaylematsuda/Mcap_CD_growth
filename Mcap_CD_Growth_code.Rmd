@@ -279,11 +279,27 @@ mort<-drop_na(mort)
 mort2<-pivot_wider(mort, names_from = time.point, values_from = mortality, )
 
 df <- full_join(df, mort2) # we are missing some values
-
-
-
-
 ```
+
+# Color
+```{r}
+color <- read_csv("color.score.csv") %>%
+  rename(genotype = "Colony #") %>%
+  select(-X7) %>%
+  pivot_longer(2:6, names_to = "obs") %>%
+  group_by(genotype) %>%
+  count(orange = (value == "O")) %>%
+  filter(n == max(n)) %>%
+  mutate(conf = n/5,
+         color = if_else(orange, "orange", "brown")) %>%
+  select(genotype, color, conf) %>%
+  mutate(genotype = factor(genotype))
+  
+hi <- full_join(df, color)
+
+# figure out why some genotypes have no color associated with them
+```
+
 
 
 # Save cleaned dataset to file
