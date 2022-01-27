@@ -1,0 +1,108 @@
+---
+title: "analysis.Rmd"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(lme4)
+library(emmeans)
+library(multcomp)
+```
+
+## Plot the data
+```{r}
+df <- read_csv("all_data_cleaned.csv")
+# Drop frags with no wieght data until we figure that out....
+df <- df %>% drop_na(Dry.Weigh.g)
+
+
+
+# Mortality
+ggplot(df, aes(x = days, y = mortality, color = dom, group = frag.id)) +
+  facet_wrap(~light.level) + 
+  geom_line()
+
+# some corals got less dead from T1 to T2... double check these!
+df %>%
+  pivot_wider(id_cols = c(frag.id, time.point, genotype, light.level, dom, color),
+              names_from = time.point,
+              values_from = mortality) %>%
+  filter(T2 < T1)
+
+# plot better
+df %>%
+  group_by(dom, light.level, time.point) %>%
+  summarize(mean = mean(mortality, na.rm = T)) %>%
+  ggplot(aes(x = ))
+
+ggplot(df, aes(x = time.point, y = mortality, color = dom)) +
+  facet_wrap(~light.level) + 
+  geom_boxplot()
+
+mod <- lmer(log(mortality) ~ time.point * dom * light.level + (1|genotype) + (1|tank), data = df)
+Anova(mod)
+
+hist(residuals(mod))
+shapiro.test(residuals(mod))
+qqPlot(residuals(mod))
+
+### go back and check whether frags with mortality as NA are actually dead and should be 6...
+
+df %>%
+  filter(time.point == "T2") %>%
+  ggplot(aes(x = mortality)) +
+  geom_histogram(aes(y = ..density..)) +
+  facet_wrap(~dom)
+```
+
+# Growth
+```{r}
+
+ggplot(df, aes(x = days, y = Dry.Weigh.g, color = dom, group = frag.id)) +
+  facet_wrap(~light.level) + 
+  geom_line()
+  
+# clearly some outlier values of weight to double check....
+
+gr <- df %>%
+  pivot_wider(id_cols = c(frag.id, time.point, genotype, light.level, tank, dom, color),
+              names_from = time.point,
+              values_from = Dry.Weigh.g) %>%
+  mutate(grT1 = (T1 - T0)/T0/30 * 100,
+         grT2 = (T2 - T1)/T1/30 * 100) %>%
+  pivot_longer(cols = c(grT1, grT2), names_to = "time.point", values_to = "growth.rate")
+
+gr %>%
+  filter(growth.rate < 0.5, growth.rate > -0.5) %>%
+  ggplot(aes(x = time.point, y = growth.rate, group = frag.id, color = dom)) +
+  facet_wrap(~light.level) + 
+  geom_line()
+
+gr %>%
+  filter(growth.rate < 0.5, growth.rate > -0.5) %>%
+  ggplot(aes(x = time.point, y = growth.rate, color = dom)) +
+  facet_wrap(~light.level) +
+  geom_boxplot()
+
+gr
+t1gr <- gr %>% filter(time.point == "grT1")
+mod <- lmer(growth.rate ~ dom * light.level + (1|genotype), data = t1gr)
+Anova(mod)
+
+hist(residuals(mod))
+shapiro.test(residuals(mod))
+qqPlot(residuals(mod))
+
+emm <- emmeans(mod, ~ dom*light.level, adjust = "Tukey")
+cld(emm)
+pairs(emm)
+
+data.frame(emm) %>%
+  ggplot(aes(x = light.level, y = emmean, color = dom)) +
+  geom_point(position = position_dodge(width  = 0.5)) +
+  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL),
+                position = position_dodge(width  = 0.5))
+```
+
