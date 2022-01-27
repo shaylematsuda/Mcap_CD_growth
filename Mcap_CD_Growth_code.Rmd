@@ -268,17 +268,17 @@ df <- df %>%
 
 # mortality
 ```{r}
-df.test<-df
 
-# load df
 mort<-read_csv("UROP_mortality.csv")
 mort$frag.id <- as.factor(as.character(mort$frag.id))
 
 mort <- as_tibble(mort)
 mort<-drop_na(mort)
-mort2<-pivot_wider(mort, names_from = time.point, values_from = mortality, )
+#mort2<-pivot_wider(mort, names_from = time.point, values_from = mortality, )
 
-df <- full_join(df, mort2) # we are missing some values
+df <- full_join(df, mort) # we are missing some values
+df <- df %>%
+  mutate(mortality = if_else(time.point == "T0", 1, mortality))
 ```
 
 # Color
