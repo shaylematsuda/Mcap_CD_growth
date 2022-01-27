@@ -279,6 +279,10 @@ mort<-drop_na(mort)
 df <- full_join(df, mort) # we are missing some values
 df <- df %>%
   mutate(mortality = if_else(time.point == "T0", 1, mortality))
+
+
+# some frags have mort data, but nothing else...?
+df %>% filter(is.na(dom))
 ```
 
 # Color
