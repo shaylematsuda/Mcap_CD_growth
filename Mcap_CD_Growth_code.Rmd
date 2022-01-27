@@ -285,7 +285,7 @@ df <- full_join(df, mort2) # we are missing some values
 ```{r}
 color <- read_csv("color.score.csv") %>%
   rename(genotype = "Colony #") %>%
-  select(-X7) %>%
+  select(-7) %>%
   pivot_longer(2:6, names_to = "obs") %>%
   group_by(genotype) %>%
   drop_na(value) %>%
