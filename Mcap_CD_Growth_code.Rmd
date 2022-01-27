@@ -309,6 +309,18 @@ df %>%
   arrange(genotype)
 ```
 
+```{r}
+# Final check for duplicates
+df %>%
+  count(frag.id, time.point) %>%
+  arrange(-n)
+  
+df %>%
+  filter(frag.id == 21)
+# frag 21 at T0 was qPCR'd twice, once showing C and once D -- above, we decided other evidence showed this is a D colony, so we are dropping the C observation
+df <- df %>%
+  filter(!(frag.id == 21 & time.point == "T0" & propD == 0))
+```
 
 
 # Save cleaned dataset to file
