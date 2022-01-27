@@ -288,16 +288,21 @@ color <- read_csv("color.score.csv") %>%
   select(-X7) %>%
   pivot_longer(2:6, names_to = "obs") %>%
   group_by(genotype) %>%
+  drop_na(value) %>%
   count(orange = (value == "O")) %>%
-  filter(n == max(n)) %>%
-  mutate(conf = n/5,
+  mutate(conf = n/sum(n),
          color = if_else(orange, "orange", "brown")) %>%
+  filter(conf == max(conf)) %>%
   select(genotype, color, conf) %>%
   mutate(genotype = factor(genotype))
   
-hi <- full_join(df, color)
+df <- full_join(df, color)
 
-# figure out why some genotypes have no color associated with them
+# some genotypes have no color associated with them
+df %>%
+  filter(is.na(color)) %>%
+  distinct(genotype) %>%
+  arrange(genotype)
 ```
 
 
