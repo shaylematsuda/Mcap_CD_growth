@@ -24,7 +24,7 @@ ggplot(df, aes(x = days, y = mortality, color = dom, group = frag.id)) +
   facet_wrap(~light.level) + 
   geom_line()
 
-# some corals got less dead from T1 to T2... double check these!
+# some corals got less dead from T1 to T2... double check these! DONE SM 1/28/22
 df %>%
   pivot_wider(id_cols = c(frag.id, time.point, genotype, light.level, dom, color),
               names_from = time.point,
