@@ -48,7 +48,7 @@ hist(residuals(mod))
 shapiro.test(residuals(mod))
 qqPlot(residuals(mod))
 
-### go back and check whether frags with mortality as NA are actually dead and should be 6...
+### go back and check whether frags with mortality as NA are actually dead and should be 6... Done for T2 SM 1/28/22
 
 df %>%
   filter(time.point == "T2") %>%
