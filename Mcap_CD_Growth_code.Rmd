@@ -281,8 +281,8 @@ df <- df %>%
   mutate(mortality = if_else(time.point == "T0", 1, mortality))
 
 
-# some frags have mort data, but nothing else...?
-df %>% filter(is.na(dom))
+# # some frags have mort data, but nothing else...? FIXED SM 1/28/22
+# df %>% filter(is.na(dom))
 ```
 
 # Color
