@@ -274,12 +274,23 @@ mort$frag.id <- as.factor(as.character(mort$frag.id))
 
 mort <- as_tibble(mort)
 mort<-drop_na(mort)
-#mort2<-pivot_wider(mort, names_from = time.point, values_from = mortality, )
+mort2<-pivot_wider(mort, names_from = time.point, values_from = mortality, )
 
-df <- full_join(df, mort) # we are missing some values
+# change missing T1 mort scores to the score at T2 to be conservative
+mort2<-mort2 %>%
+  mutate(T1 = case_when(
+    is.na(T1) & T2 == 5 ~ 5,
+    is.na(T1) & T2 == 3 ~ 3,
+    is.na(T1) & T2 == 2 ~ 2,
+    is.na(T1) & T2 == 1 ~ 1,
+    TRUE ~ T1
+  ))
+
+mort2<-pivot_longer(mort2, cols = c(T1, T2), names_to = "time.point", values_to = "mortality")
+
+df <- full_join(df, mort2) # we are missing some values
 df <- df %>%
   mutate(mortality = if_else(time.point == "T0", 1, mortality))
-
 
 # # some frags have mort data, but nothing else...? FIXED SM 1/28/22
 # df %>% filter(is.na(dom))
