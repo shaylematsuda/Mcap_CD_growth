@@ -64,7 +64,7 @@ ggplot(df, aes(x = days, y = Dry.Weigh.g, color = dom, group = frag.id)) +
   facet_wrap(~light.level) + 
   geom_line()
   
-# clearly some outlier values of weight to double check....
+# clearly some outlier values of weight to double check....checked them and only one was off.updated 2.1.22 SM
 
 gr <- df %>%
   pivot_wider(id_cols = c(frag.id, time.point, genotype, light.level, tank, dom, color),
@@ -73,6 +73,15 @@ gr <- df %>%
   mutate(grT1 = (T1 - T0)/T0/30 * 100,
          grT2 = (T2 - T1)/T1/30 * 100) %>%
   pivot_longer(cols = c(grT1, grT2), names_to = "time.point", values_to = "growth.rate")
+
+#  check for outliers on both ends...
+gr %>%
+  filter(growth.rate <0)
+hist(gr$growth.rate)
+
+# remove frags that died somehow,..... we need to add back in the mortality data but need to pivot again?
+
+
 
 gr %>%
   filter(growth.rate < 0.5, growth.rate > -0.5) %>%
