@@ -22,6 +22,9 @@ require("dplyr")
 require("utils")
 library("reshape2") #data shaping
 library(lubridate)
+library(lmerTest)
+library(RColorBrewer)
+library(colorRamps)
 ```
 
 # Load in data
@@ -37,11 +40,6 @@ df <- read_csv("all_data_cleaned.csv") %>%
 
 # Mortality
 ```{r}
-
-
-
-
-
   ggplot(df.mort, aes(x = days, y = mortality, color = dom, group = frag.id)) +  # look at mort/time
    facet_wrap(~light.level) + 
     geom_line()
@@ -73,17 +71,53 @@ ggplot(df.mort, aes(x = interaction(dom,time.point), y = mortality, color = dom)
   
 
 
-# models
-# lmer <- probably should not use due to normality violations (all significant but time*dom*light interaction)
+# models ####
+# lmer <- probably should not use due to normality violations (all significant but time*dom*light interaction) ####
   
 mod<-lmer(mortality ~ time.point * dom * light.level + (1|frag.id) + (1|genotype) + (1|tank), data = df.mort)
-Anova(mod)
+anova(mod)
 
 hist(residuals(mod)) #normal
 shapiro.test(residuals(mod))  #p-value < 2.2e-16
 qqPlot(residuals(mod)) #kinda look like crap
 
-# glmer - full model (Dom, light, time all significant, no interactions)
+
+#transform data, but it looks like crap still...not sure what else to do but make a factor
+mod<-lmer(log10(mortality) ~ time.point * dom * light.level + (1|frag.id) + (1|genotype) + (1|tank), data = df.mort)
+anova(mod)
+  hist(residuals(mod)) #normal
+  shapiro.test(residuals(mod))  #p-value < 2.2e-16
+  qqPlot(residuals(mod)) #kinda look like crap
+  
+mod<-lmer((mortality^(1/3)) ~ time.point * dom * light.level + (1|frag.id) + (1|genotype) + (1|tank), data = df.mort)
+anova(mod)
+  hist(residuals(mod)) #normal
+  shapiro.test(residuals(mod))  #p-value < 2.2e-16
+  qqPlot(residuals(mod)) #kinda look like crap  
+
+# T1 only
+    df.mort.T1<-subset(df.mort, time.point=="T1")
+
+    mod<-lmer(mortality ~  dom * light.level + (1|genotype) + (1|tank), data = df.mort.T1)
+    anova(mod) # interaction not sig)
+  
+    hist(residuals(mod)) #normal
+    shapiro.test(residuals(mod))  #p-value 4.698e-16
+    qqPlot(residuals(mod)) #kinda look like crap
+    
+# T2 only
+    df.mort.T2<-subset(df.mort, time.point=="T2")
+
+    mod<-lmer(mortality ~  dom * light.level + (1|genotype) + (1|tank), data = df.mort.T2)
+    anova(mod) # INTERACTION SIGNIFICANT**
+  
+    hist(residuals(mod)) #normal
+    shapiro.test(residuals(mod))  #p-value 2.019e-12
+    qqPlot(residuals(mod)) #kinda look like crap
+             
+        
+##### GLMER tests  with mort as numeric ####
+# glmer - full model (dom, light, time all significant, no interactions)
   mod <- glmer(mortality ~ dom * light.level *time.point + (1|frag.id) + (1|genotype) + (1|tank), family=poisson(), data = df.mort)
     Anova(mod)
 
@@ -91,40 +125,39 @@ qqPlot(residuals(mod)) #kinda look like crap
   mod <- glmer(mortality ~ time.point +  (1|genotype) +(1|tank) , family=poisson(), data = df.mort)
     Anova(mod)
     
-  # by time * dom
+  # by time * dom (time, dom are sig, not interaction)
   mod <- glmer(mortality ~ time.point * dom + (1|genotype) +(1|tank) , family=poisson(), data = df.mort)
     Anova(mod)
     
-   # by time * dom * light.level <- model failed to converge
-  mod <- glmer(mortality ~ time.point * dom *light.level + (1|genotype) +(1|tank) , family=poisson(), data = df.mort)
-    Anova(mod)
-    
-  # subset T1 only
+# subset T1 only
     df.mort.T1<-subset(df.mort, time.point=="T1")
     
-    # by time * dom * light.level <- model failed to converge
-        mod <- glmer(mortality ~  dom *light.level + (1|genotype) +(1|tank) , family=poisson(), data = df.mort.T1)
+    # dom * light.level 
+        # glmer <- singularities (dom is sig)
+        mod <- glmer(mortality ~  dom *light.level + (1|genotype) +(1|tank), family=poisson(), data = df.mort.T1)
+             Anova(mod)
+        # lmer T1 only (dom and light sig, not interaction)
+        mod <- lmer(mortality ~  dom *light.level + (1|genotype) +(1|tank), data = df.mort.T1)
              Anova(mod)
 
-  # subset T2 only
+# subset T2 only
     df.mort.T2<-subset(df.mort, time.point=="T2")
-    hist(df.mort.T2$mortality)
-    
-    # by time * dom * light.level <- model failed to converge
+
+    # dom * light.level <- model failed to converge
+      
+      #glmer singularities (dom and light sig, not interaction)
         mod <- glmer(mortality ~  dom * light.level + (1|genotype) +(1|tank) , family=poisson(), data = df.mort.T2)
-             Anova(mod)   
-# 
-# df.mort %>%
-#   filter(time.point == "T2") %>%
-#   ggplot(aes(x = mortality)) +
-#   geom_histogram(aes(y = ..density..)) +
-#   facet_wrap(~dom)
+             Anova(mod)  
              
-# try again with mortality as a factor 
-             
-             
-             
-             
+########  try again with mortality as a factor  ###
+df.mort$mortatlity.f<-as.factor(as.character(df.mort$mortality))
+
+# ordering the levels
+  df.mort$mortatlity.f <- ordered(df.mort$mortatlity.f, levels = c("1", "2","3","4","5","6"))         
+     is.ordered(df.mort$mortatlity.f) #check
+               
+
+    
 # try again ordinal factor, ordered logistic regression model, https://stats.oarc.ucla.edu/r/dae/ordinal-logistic-regression/
 require(foreign)
 require(ggplot2)
@@ -132,11 +165,7 @@ require(MASS)
 require(Hmisc)
 require(reshape2)
              
-df.mort$mortatlity.f<-as.factor(as.character(df.mort$mortality))
-# ordering the levels
-df.mort$mortatlity.f <- ordered(df.mort$mortatlity.f, levels = c("1", "2","3","4","5","6"))         
-     is.ordered(df.mort$mortatlity.f) #check
-     
+
 # model for ordered factor: polr()    
 mod <- polr(mortatlity.f ~ dom + light.level + time.point, data = df.mort, Hess=TRUE)
 summary(mod)
@@ -146,7 +175,10 @@ p <- pnorm(abs(ctable[, "t value"]), lower.tail = FALSE) * 2
 
 
 
+
+# Lastly, changing mort scores into perent. 1=.2, 2=.15, 2=.38, 3=.63, 4=.875, 5=99.5
 ```
+
 
 # Growth
 ```{r}
