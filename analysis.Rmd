@@ -26,18 +26,18 @@ library(lubridate)
 
 # Load in data
 ```{r}
-df <- read_csv("all_data_cleaned.csv")
+df <- read_csv("all_data_cleaned.csv") %>% 
+  drop_na(mortality) %>%      #remove df with no mortality score
+  mutate(depth.m = as.numeric(depth.m),
+         across(.cols = c(time.point, genotype, tank, dom, mix,
+                          color, frag.id, tank, big.tank, light.level), as.factor)) %>%
+  mutate(light.level = factor(light.level, levels = c("Natural", "Low Shade", "Medium Shade", "High Shade")))
 
 ```
 
 # Mortality
 ```{r}
-df.mort <- df %>% drop_na(mortality) #remove df with no mortality score
-df.mort$time.point<-as.factor(df.mort$time.point)  
-df.mort$genotype<-as.factor(df.mort$genotype)  
-df.mort$tank<-as.factor(df.mort$tank)  
-df.mort$dom<-as.factor(df.mort$dom)  
-df.mort$color<-as.factor(df.mort$color)  
+
 
 
 
@@ -54,8 +54,6 @@ df.mort %>%
 
 # boxplot C v D:facet by shade treatment #####
 
-df.mort$light.level <- factor(df.mort$light.level,                                          # Reordering group factor levels
-                         levels = c("Natural", "Low Shade", "Medium Shade", "High Shade"))
 
 df.mort %>%
   group_by(dom, light.level, time.point) %>%
@@ -241,5 +239,40 @@ gr %>%
   geom_boxplot() +
   facet_grid(time.point ~ dom) +
   ylim(-0.1, 0.5)
+
+
+# Run stats on unfiltered dataset
+mod <- lmer(growth.rate ~ dom * light.level + (1|genotype) + (1|tank), 
+            data = filter(gr,  time.point == "T1"))
+Anova(mod)
+
+emm <- emmeans(mod, ~ dom*light.level, adjust = "Tukey")
+
+data.frame(emm) %>%
+  #filter(time.point == "T1") %>%
+  ggplot(aes(x = light.level, y = emmean, color = dom)) +
+  geom_point(position = position_dodge(width  = 0.5)) +
+  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL),
+                position = position_dodge(width  = 0.5))
+
+# Run stats on mort = <2
+grf <- grres.f2 %>% 
+  left_join(df) %>%
+  filter(mortality <= 4)
+
+mod <- lmer(growth.rate ~ dom * light.level * time.point + (1|genotype) + (1|tank), 
+            data = grf)
+Anova(mod)
+hist(residuals(mod))
+
+emm <- emmeans(mod, ~ dom*light.level|time.point, adjust = "Tukey")
+cld(emm)
+
+data.frame(emm) %>%
+  #filter(time.point == "T1") %>%
+  ggplot(aes(x = light.level, y = emmean, color = dom)) +
+  geom_point(position = position_dodge(width  = 0.5)) +
+  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL),
+                position = position_dodge(width  = 0.5))
 ```
 
