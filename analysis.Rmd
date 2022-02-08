@@ -11,6 +11,17 @@ library(emmeans)
 library(multcomp)
 library(broom.mixed)
 library(tidyverse)
+
+library("car") #levenes test
+library("ggplot2") #plotting
+library("plotrix") #plotting
+library("reshape") #data shaping
+require("gridExtra") #Arrange Plots for output
+require("plyr") #for ddply
+require("dplyr")
+require("utils")
+library("reshape2") #data shaping
+library(lubridate)
 ```
 
 # Load in data
@@ -60,25 +71,26 @@ ggplot(df.mort, aes(x = interaction(dom,time.point), y = mortality, color = dom)
   facet_wrap(~light.level) + 
    theme_classic()+
     geom_jitter()+
-    scale_y_continuous(breaks=1:6)+
+    scale_y_continuous(breaks=1:6)
   
 
 
 # models
-# lmer <- probably should not use due to normality violations
-mod <- lmer(mortality ~ time.point * dom * light.level + (1|frag.id) + (1|genotype) + (1|tank), data = df.mort)
+# lmer <- probably should not use due to normality violations (all significant but time*dom*light interaction)
+  
+mod<-lmer(mortality ~ time.point * dom * light.level + (1|frag.id) + (1|genotype) + (1|tank), data = df.mort)
 Anova(mod)
 
 hist(residuals(mod)) #normal
 shapiro.test(residuals(mod))  #p-value < 2.2e-16
 qqPlot(residuals(mod)) #kinda look like crap
 
-# glmer
-  mod <- glmer(mortality ~ dom * light.level *time.point + (1|genotype) + (1|tank), family=poisson(), data = df.mort)
+# glmer - full model (Dom, light, time all significant, no interactions)
+  mod <- glmer(mortality ~ dom * light.level *time.point + (1|frag.id) + (1|genotype) + (1|tank), family=poisson(), data = df.mort)
     Anova(mod)
 
-  # by time only
-  mod <- glmer(mortality ~ time.point + (1|genotype) +(1|tank) , family=poisson(), data = df.mort)
+  # by time only (significant)
+  mod <- glmer(mortality ~ time.point +  (1|genotype) +(1|tank) , family=poisson(), data = df.mort)
     Anova(mod)
     
   # by time * dom
