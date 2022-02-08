@@ -65,28 +65,8 @@ ggplot(df.mort, aes(x = interaction(dom,time.point), y = mortality, color = dom)
 
 
 # models
-# check for normality (not normal)
-hist(df.mort$mortality) # pos skew
-  qqnorm(df.mort$mortality, pch = 1, frame = FALSE)
-  qqline(df.mort$mortality, col = "steelblue", lwd = 2)
-
-df.mort$mort_log<- log10(df.mort$mortality)
-hist(df.mort$mort_log) # pos skew
-   qqnorm(df.mort$mort_log, pch = 1, frame = FALSE)
-   qqline(df.mort$mort_log, col = "steelblue", lwd = 2)
-   
-df.mort$mort_cube<- df.mort$mortality^(1/3)
-hist(df.mort$mort_cube) # pos skew
-   qqnorm(df.mort$mort_cube, pch = 1, frame = FALSE)
-   qqline(df.mort$mort_cube, col = "steelblue", lwd = 2)
-
-df.mort$mort_inv<- 1/df.mort$mortality
-hist(df.mort$mort_inv) # now just neg skew
-   qqnorm(df.mort$mort_inv, pch = 1, frame = FALSE)
-   qqline(df.mort$mort_inv, col = "steelblue", lwd = 2)
-
 # lmer <- probably should not use due to normality violations
-mod <- lmer(log(mortality) ~ time.point * dom * light.level + (1|genotype) + (1|tank), data = df.mort)
+mod <- lmer(mortality ~ time.point * dom * light.level + (1|frag.id) + (1|genotype) + (1|tank), data = df.mort)
 Anova(mod)
 
 hist(residuals(mod)) #normal
@@ -135,7 +115,7 @@ qqPlot(residuals(mod)) #kinda look like crap
              
              
              
-# try again ordinal factor, mordered logistic regression model, https://stats.oarc.ucla.edu/r/dae/ordinal-logistic-regression/
+# try again ordinal factor, ordered logistic regression model, https://stats.oarc.ucla.edu/r/dae/ordinal-logistic-regression/
 require(foreign)
 require(ggplot2)
 require(MASS)
@@ -155,8 +135,6 @@ p <- pnorm(abs(ctable[, "t value"]), lower.tail = FALSE) * 2
 (ctable <- cbind(ctable, "p value" = p))
 
 
-mod <- lmer(mortatlity.f ~ time.point * dom *light.level + (1|genotype) +(1|tank) ,  data = df.mort)
-    Anova(mod)
 
 ```
 
