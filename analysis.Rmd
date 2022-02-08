@@ -11,50 +11,151 @@ library(emmeans)
 library(multcomp)
 ```
 
-## Plot the data
+# Load in data
 ```{r}
 df <- read_csv("all_data_cleaned.csv")
-# Drop frags with no wieght data until we figure that out....
-df <- df %>% drop_na(Dry.Weigh.g)
 
-
+```
 
 # Mortality
-ggplot(df, aes(x = days, y = mortality, color = dom, group = frag.id)) +
-  facet_wrap(~light.level) + 
-  geom_line()
+```{r}
+df.mort <- df %>% drop_na(mortality) #remove df with no mortality score
+df.mort$time.point<-as.factor(df.mort$time.point)  
+df.mort$genotype<-as.factor(df.mort$genotype)  
+df.mort$tank<-as.factor(df.mort$tank)  
+df.mort$dom<-as.factor(df.mort$dom)  
+df.mort$color<-as.factor(df.mort$color)  
 
-# some corals got less dead from T1 to T2... double check these! DONE SM 1/28/22
-df %>%
+
+
+
+  ggplot(df.mort, aes(x = days, y = mortality, color = dom, group = frag.id)) +  # look at mort/time
+   facet_wrap(~light.level) + 
+    geom_line()
+
+df.mort %>%
   pivot_wider(id_cols = c(frag.id, time.point, genotype, light.level, dom, color),
               names_from = time.point,
               values_from = mortality) %>%
   filter(T2 < T1)
 
-# plot better
-df %>%
+# boxplot C v D:facet by shade treatment #####
+
+df.mort$light.level <- factor(df.mort$light.level,                                          # Reordering group factor levels
+                         levels = c("Natural", "Low Shade", "Medium Shade", "High Shade"))
+
+df.mort %>%
   group_by(dom, light.level, time.point) %>%
   summarize(mean = mean(mortality, na.rm = T)) %>%
   ggplot(aes(x = ))
 
-ggplot(df, aes(x = time.point, y = mortality, color = dom)) +
+ggplot(df.mort, aes(x = time.point, y = mortality, color = dom)) +
   facet_wrap(~light.level) + 
-  geom_boxplot()
+   theme_classic()+
+    geom_boxplot()
 
-mod <- lmer(log(mortality) ~ time.point * dom * light.level + (1|genotype) + (1|tank), data = df)
+ggplot(df.mort, aes(x = interaction(dom,time.point), y = mortality, color = dom)) +
+  facet_wrap(~light.level) + 
+   theme_classic()+
+    geom_jitter()+
+    scale_y_continuous(breaks=1:6)+
+  
+
+
+# models
+# check for normality (not normal)
+hist(df.mort$mortality) # pos skew
+  qqnorm(df.mort$mortality, pch = 1, frame = FALSE)
+  qqline(df.mort$mortality, col = "steelblue", lwd = 2)
+
+df.mort$mort_log<- log10(df.mort$mortality)
+hist(df.mort$mort_log) # pos skew
+   qqnorm(df.mort$mort_log, pch = 1, frame = FALSE)
+   qqline(df.mort$mort_log, col = "steelblue", lwd = 2)
+   
+df.mort$mort_cube<- df.mort$mortality^(1/3)
+hist(df.mort$mort_cube) # pos skew
+   qqnorm(df.mort$mort_cube, pch = 1, frame = FALSE)
+   qqline(df.mort$mort_cube, col = "steelblue", lwd = 2)
+
+df.mort$mort_inv<- 1/df.mort$mortality
+hist(df.mort$mort_inv) # now just neg skew
+   qqnorm(df.mort$mort_inv, pch = 1, frame = FALSE)
+   qqline(df.mort$mort_inv, col = "steelblue", lwd = 2)
+
+# lmer <- probably should not use due to normality violations
+mod <- lmer(log(mortality) ~ time.point * dom * light.level + (1|genotype) + (1|tank), data = df.mort)
 Anova(mod)
 
-hist(residuals(mod))
-shapiro.test(residuals(mod))
-qqPlot(residuals(mod))
+hist(residuals(mod)) #normal
+shapiro.test(residuals(mod))  #p-value < 2.2e-16
+qqPlot(residuals(mod)) #kinda look like crap
 
-### go back and check whether frags with mortality as NA are actually dead and should be 6... Done for T2 SM 1/28/22
+# glmer
+  mod <- glmer(mortality ~ dom * light.level *time.point + (1|genotype) + (1|tank), family=poisson(), data = df.mort)
+    Anova(mod)
 
-df %>%
-  filter(time.point == "T2") %>%
-  ggplot(aes(x = mortality)) +
-  geom_histogram(aes(y = ..density..)) +
-  facet_wrap(~dom)
+  # by time only
+  mod <- glmer(mortality ~ time.point + (1|genotype) +(1|tank) , family=poisson(), data = df.mort)
+    Anova(mod)
+    
+  # by time * dom
+  mod <- glmer(mortality ~ time.point * dom + (1|genotype) +(1|tank) , family=poisson(), data = df.mort)
+    Anova(mod)
+    
+   # by time * dom * light.level <- model failed to converge
+  mod <- glmer(mortality ~ time.point * dom *light.level + (1|genotype) +(1|tank) , family=poisson(), data = df.mort)
+    Anova(mod)
+    
+  # subset T1 only
+    df.mort.T1<-subset(df.mort, time.point=="T1")
+    
+    # by time * dom * light.level <- model failed to converge
+        mod <- glmer(mortality ~  dom *light.level + (1|genotype) +(1|tank) , family=poisson(), data = df.mort.T1)
+             Anova(mod)
+
+  # subset T2 only
+    df.mort.T2<-subset(df.mort, time.point=="T2")
+    hist(df.mort.T2$mortality)
+    
+    # by time * dom * light.level <- model failed to converge
+        mod <- glmer(mortality ~  dom * light.level + (1|genotype) +(1|tank) , family=poisson(), data = df.mort.T2)
+             Anova(mod)   
+# 
+# df.mort %>%
+#   filter(time.point == "T2") %>%
+#   ggplot(aes(x = mortality)) +
+#   geom_histogram(aes(y = ..density..)) +
+#   facet_wrap(~dom)
+             
+# try again with mortality as a factor 
+             
+             
+             
+             
+# try again ordinal factor, mordered logistic regression model, https://stats.oarc.ucla.edu/r/dae/ordinal-logistic-regression/
+require(foreign)
+require(ggplot2)
+require(MASS)
+require(Hmisc)
+require(reshape2)
+             
+df.mort$mortatlity.f<-as.factor(as.character(df.mort$mortality))
+# ordering the levels
+df.mort$mortatlity.f <- ordered(df.mort$mortatlity.f, levels = c("1", "2","3","4","5","6"))         
+     is.ordered(df.mort$mortatlity.f) #check
+     
+# model for ordered factor: polr()    
+mod <- polr(mortatlity.f ~ dom + light.level + time.point, data = df.mort, Hess=TRUE)
+summary(mod)
+(ctable <- coef(summary(mod)))
+p <- pnorm(abs(ctable[, "t value"]), lower.tail = FALSE) * 2
+(ctable <- cbind(ctable, "p value" = p))
+
+
+mod <- lmer(mortatlity.f ~ time.point * dom *light.level + (1|genotype) +(1|tank) ,  data = df.mort)
+    Anova(mod)
+
 ```
 
 # Growth
