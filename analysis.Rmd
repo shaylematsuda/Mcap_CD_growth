@@ -199,6 +199,8 @@ gr <- df %>%
   dplyr::select(-T0, -T1, -T2, T1 = grT1, T2 = grT2) %>%
   pivot_longer(cols = c(T1, T2), names_to = "time.point", values_to = "growth.rate")
 
+##############################################
+
 # Plot growth rates by predictors
 ggplot(gr, aes(x = light.level, y = growth.rate)) +
   geom_boxplot() +
@@ -212,7 +214,6 @@ ggplot(grres, aes(x = .resid, fill = .cooksd > 0.1)) + geom_histogram(bins = 50)
 # Filter out observations with cooks distance > 0.1
 grres.f <- grres %>% filter(.cooksd < 0.1)
 nrow(grres) - nrow(grres.f)   # Filtered out 6 observations
-
 
 # Plot FILTERED growth rates by predictors
 ggplot(grres.f, aes(x = light.level, y = growth.rate)) +
@@ -231,9 +232,9 @@ data.frame(emm) %>%
   geom_point(position = position_dodge(width  = 0.5)) +
   geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL),
                 position = position_dodge(width  = 0.5))
-
 cld(emm)
 
+##############################################
 
 # FILTER dataset even more by mortality scores
 # Plot growth rate filtering by mortality
@@ -265,5 +266,20 @@ cld(emm)
 
 # Are multiple comparisons being adjusted for correctly or too conservatively?
 # What about modeling raw weight data over time?
+
+mod <- lmer(Dry.Weigh.g ~ days * light.level * dom + (1|frag.id) + (1|genotype) + (1|tank), data = df)
+moddf <- augment(mod)
+moddf <- filter(moddf, .cooksd < 1)
+mod <- lmer(Dry.Weigh.g ~ days * light.level * dom + (1|frag.id) + (1|genotype) + (1|tank), data = moddf)
+Anova(mod)
+hist(resid(mod))
+emm <- emtrends(mod, ~ dom*light.level, var = "days")
+cld(emm)
+data.frame(emm) %>%
+  ggplot(aes(x = light.level, y = days.trend, color = dom)) +
+  geom_point(position = position_dodge(width  = 0.5)) +
+  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL),
+                position = position_dodge(width  = 0.5))
+
 ```
 
