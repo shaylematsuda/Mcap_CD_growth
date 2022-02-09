@@ -161,48 +161,24 @@ ggplot(gr, aes(x = light.level, y = growth.rate)) +
   facet_grid(time.point ~ dom)
 
 # Fit model to find outliers based on growth rate residuals
-grmod <- lmer(growth.rate ~ dom * light.level * time.point + (1|genotype) + (1|frag.id), data = gr)
+grmod <- lmer(growth.rate ~ dom * light.level * time.point + (1|genotype) + (1|frag.id) + (1|tank), data = gr)
 grres <- augment(grmod)
-ggplot(grres, aes(x = .resid)) + geom_histogram(bins = 50)
+ggplot(grres, aes(x = .resid, fill = .cooksd > 0.1)) + geom_histogram(bins = 50)
 
-# Identify cutoffs using 1.5 * IQR
-Q <- quantile(grres$.resid, probs=c(.25, .75), na.rm = TRUE)
-iqr <- IQR(grres$.resid, na.rm = TRUE)
-iqrbounds <- c(Q[1]-1.5*iqr, Q[2]+1.5*iqr)
+# Filter out observations with cooks distance > 0.1
+grres.f <- grres %>% filter(.cooksd < 0.1)
+nrow(grres) - nrow(grres.f)   # Filtered out 6 observations
 
-# Identify cutoffs using 2 sd's
-sdbounds <- c(mean(grres$.resid) - 2 * sd(grres$.resid),
-              mean(grres$.resid) + 2 * sd(grres$.resid))
-
-# Plot residuals with candidate cutoffs
-ggplot(grres, aes(x = .resid)) + geom_histogram(bins = 50) +
-  geom_vline(xintercept = iqrbounds, color = "red") +
-  geom_vline(xintercept = sdbounds)
-
-# Filter datasets based on these cutoffs
-grres.f1 <- grres %>% filter(.resid > iqrbounds[1], .resid < iqrbounds[2])
-nrow(grres) - nrow(grres.f1)
-grres.f2 <- grres %>% filter(.resid > sdbounds[1], .resid < sdbounds[2])
-nrow(grres) - nrow(grres.f2)
 
 # Plot FILTERED growth rates by predictors
-ggplot(grres.f1, aes(x = light.level, y = growth.rate)) +
+ggplot(grres.f, aes(x = light.level, y = growth.rate)) +
   geom_boxplot() +
-  facet_grid(time.point ~ dom) +
-  ylim(-0.1, 0.5)
-
-ggplot(grres.f2, aes(x = light.level, y = growth.rate)) +
-  geom_violin() +
-  facet_grid(time.point ~ dom) +
-  ylim(-0.1, 0.5)
+  geom_jitter() +
+  facet_grid(time.point ~ dom)
 
 # Refit model with filtered dataset
-mod <- lmer(growth.rate ~ dom * light.level * time.point + (1|genotype) + (1|frag.id), data = grres.f1)
+mod <- lmer(growth.rate ~ dom * light.level + time.point + (1|genotype) + (1|frag.id) + (1|tank), data = grres.f)
 Anova(mod)
-
-hist(residuals(mod))
-shapiro.test(residuals(mod))
-qqPlot(residuals(mod))
 
 emm <- emmeans(mod, ~ dom*light.level, adjust = "Tukey")
 
@@ -212,15 +188,13 @@ data.frame(emm) %>%
   geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL),
                 position = position_dodge(width  = 0.5))
 
+cld(emm)
 
+
+# FILTER dataset even more by mortality scores
 # Plot growth rate filtering by mortality
-gr %>%
-  ggplot(aes(x = light.level, y = growth.rate)) +
-  geom_boxplot() +
-  facet_grid(time.point ~ dom) +
-  ylim(-0.1, 0.5)
 
-gr %>% 
+grres.f %>% 
   left_join(df) %>%
   filter(mortality <= 2) %>%
   ggplot(aes(x = light.level, y = growth.rate)) +
@@ -229,38 +203,23 @@ gr %>%
   ylim(-0.1, 0.5)
 
 
-# Run stats on unfiltered dataset
-mod <- lmer(growth.rate ~ dom * light.level + (1|genotype) + (1|tank), 
-            data = filter(gr,  time.point == "T1"))
+# Run stats on MORTALITY-FILTERED dataset
+mod <- lmer(growth.rate ~ dom * light.level + time.point + (1|genotype) + (1|frag.id) + (1|tank), 
+            data = filter(left_join(grres.f, df),  mortality <= 2))
 Anova(mod)
 
 emm <- emmeans(mod, ~ dom*light.level, adjust = "Tukey")
-
-data.frame(emm) %>%
-  #filter(time.point == "T1") %>%
-  ggplot(aes(x = light.level, y = emmean, color = dom)) +
-  geom_point(position = position_dodge(width  = 0.5)) +
-  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL),
-                position = position_dodge(width  = 0.5))
-
-# Run stats on mort = <2
-grf <- grres.f2 %>% 
-  left_join(df) %>%
-  filter(mortality <= 4)
-
-mod <- lmer(growth.rate ~ dom * light.level * time.point + (1|genotype) + (1|tank), 
-            data = grf)
-Anova(mod)
-hist(residuals(mod))
-
-emm <- emmeans(mod, ~ dom*light.level|time.point, adjust = "Tukey")
 cld(emm)
 
 data.frame(emm) %>%
-  #filter(time.point == "T1") %>%
   ggplot(aes(x = light.level, y = emmean, color = dom)) +
   geom_point(position = position_dodge(width  = 0.5)) +
   geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL),
                 position = position_dodge(width  = 0.5))
+
+cld(emm)
+
+# Are multiple comparisons being adjusted for correctly or too conservatively?
+# What about modeling raw weight data over time?
 ```
 
