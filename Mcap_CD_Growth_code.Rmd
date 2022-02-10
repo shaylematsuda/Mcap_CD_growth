@@ -19,14 +19,11 @@ knitr::opts_chunk$set(echo = TRUE)
 library("car") #levenes test
 library("ggplot2") #plotting
 library("plotrix") #plotting
-library("reshape") #data shaping
 require("gridExtra") #Arrange Plots for output
-require("plyr") #for ddply
-require("dplyr")
 require("utils")
-library("reshape2") #data shaping
 library(lubridate)
-library (tidyverse)
+library(tidyverse)
+
 #load metadata
 geno.frag<-read.csv("UROP_metadata_colony.csv")
   geno.frag$genotype<-as.factor(as.character(geno.frag$genotype))
@@ -252,8 +249,8 @@ df <- df %>%
 # Are any genotypes entirely missing symbiont data?
 df %>%
   group_by(genotype) %>%
-  summarize(dom = !any(!is.na(dom))) %>%
-  filter(dom)  
+  summarize(missingdom = !any(!is.na(dom))) %>%
+  filter(missingdom)  
 # Yes, genotype 894 has only one fragment (265), and it has no qPCR data.
 # Parent colony screening biopsy for 894 was C, so going to label this as C (Mariah's notes also say frag 265 was setup as a brown C colony).
 df <- df %>%
@@ -264,6 +261,7 @@ df <- df %>%
   group_by(genotype) %>%
   mutate(dom = replace_na(dom, unique(dom[!is.na(dom)]))) %>%
   ungroup()
+
 ```
 
 # mortality
@@ -294,6 +292,12 @@ df <- df %>%
 
 # # some frags have mort data, but nothing else...? FIXED SM 1/28/22
 # df %>% filter(is.na(dom))
+
+# Frags missing mortality data?
+df %>%
+  group_by(frag.id) %>%
+  filter(any(is.na(mortality))) %>%
+  arrange(frag.id, time.point)
 ```
 
 # Color
@@ -325,12 +329,20 @@ df %>%
 df %>%
   count(frag.id, time.point) %>%
   arrange(-n)
-  
+
 df %>%
   filter(frag.id == 21)
 # frag 21 at T0 was qPCR'd twice, once showing C and once D -- above, we decided other evidence showed this is a D colony, so we are dropping the C observation
 df <- df %>%
   filter(!(frag.id == 21 & time.point == "T0" & propD == 0))
+```
+
+```{r}
+# Fill in missing metadata for a couple of frags at  T2
+df  <- df %>% 
+  group_by(frag.id) %>%
+  fill(genotype, light.level, big.tank, tank, depth.m, dom, color) %>%
+  ungroup()
 ```
 
 
