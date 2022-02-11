@@ -219,10 +219,11 @@ ggplot(grres.f, aes(x = light.level, y = growth.rate)) +
   facet_grid(time.point ~ dom)
 
 # Refit model with filtered dataset
-mod <- lmer(growth.rate ~ dom * light.level + time.point + (1|genotype) + (1|frag.id) + (1|tank), data = grres.f)
+mod <- lmer(growth.rate ~ dom * light.level * time.point + (1|genotype) + (1|frag.id) + (1|tank), data = grres.f)
 Anova(mod)
 
-emm <- emmeans(mod, ~ dom*light.level, adjust = "Tukey")
+emm <- emmeans(mod, ~ dom*light.level)
+rbind(contrast(emm, method = "pairwise", by = "light.level"), adjust = "fdr")
 
 data.frame(emm) %>%
   ggplot(aes(x = light.level, y = emmean, color = dom)) +
@@ -238,20 +239,27 @@ cld(emm)
 
 grres.f %>% 
   left_join(df) %>%
-  filter(mortality <= 2 & !is.na(mortality)) %>%
   ggplot(aes(x = light.level, y = growth.rate)) +
   geom_boxplot() +
+  geom_jitter(aes(color = mortality <= 2), alpha = 0.7) +
   facet_grid(time.point ~ dom) +
   ylim(-0.1, 0.5)
 
 
 # Run stats on MORTALITY-FILTERED dataset
-mod <- lmer(growth.rate ~ dom * light.level + time.point + (1|genotype) + (1|frag.id) + (1|tank), 
-            data = filter(left_join(grres.f, df), mortality <= 2 & !is.na(mortality)))
+grres.ff <- grres.f %>%
+  left_join(df) %>%
+  filter(mortality <= 2 & !is.na(mortality))
+  
+mod <- lmer(growth.rate ~ dom * light.level * time.point + (1|genotype) + (1|frag.id) + (1|tank), data = grres.ff)
 Anova(mod)
+# symbiont x light.level interaction goes away when corals with high partial mortality are excluded. This is primarily driven by two D fragments under Natural light with mortality levels >2 that, when included, bring down the D/Natural growth rate enough to make it significantly less than the C/Natural growth rate. When these two fragments are excluded, the difference between C and D under natural light, and therefore the symbiont x light interaction in the model, disappear...
 
-emm <- emmeans(mod, ~ dom*light.level, adjust = "Tukey")
+emm <- emmeans(mod, ~ dom*light.level)
 cld(emm)
+# No C-D difference when all treatments compared pairwise
+rbind(contrast(emm, method = "pairwise", by = "light.level"), adjust = "fdr")
+# marginally significant C-D difference at Natural light when only 4 tests conducted...
 
 data.frame(emm) %>%
   ggplot(aes(x = light.level, y = emmean, color = dom)) +
@@ -259,9 +267,26 @@ data.frame(emm) %>%
   geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL),
                 position = position_dodge(width  = 0.5))
 
-cld(emm)
+```
 
-# Are multiple comparisons being adjusted for correctly or too conservatively?
+```{r}
+# separate brown C and orange C
+mod <- lmer(growth.rate ~ color*dom * light.level * time.point + (1|genotype) + (1|frag.id) + (1|tank), 
+            data = left_join(grres.ff, df))
+Anova(mod)
+
+emm <- emmeans(mod, ~ color:dom*light.level)
+
+data.frame(emm) %>%
+  ggplot(aes(x = light.level, y = emmean, color = interaction(color, dom))) +
+  geom_point(position = position_dodge(width  = 0.5)) +
+  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL),
+                position = position_dodge(width  = 0.5))
+```
+
+
+
+```{r}
 # What about modeling raw weight data over time?
 
 mod <- lmer(Dry.Weigh.g ~ days * light.level * dom + (1|frag.id) + (1|genotype) + (1|tank), data = df)
@@ -277,10 +302,5 @@ data.frame(emm) %>%
   geom_point(position = position_dodge(width  = 0.5)) +
   geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL),
                 position = position_dodge(width  = 0.5))
-
-
-## 
-Ds  <- df %>%
-  filter(dom == "D", light.level == "Natural")
 ```
 
