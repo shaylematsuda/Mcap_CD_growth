@@ -264,33 +264,42 @@ df <- df %>%
 
 ```
 
-# mortality
+# mortality (Percent scores)
 ```{r}
 
-mort<-read_csv("UROP_mortality.csv")
+mort<-read_csv("partialMortality.csv")
 mort$frag.id <- as.factor(as.character(mort$frag.id))
 
 mort <- as_tibble(mort)
 mort<-drop_na(mort)
-mort2<-pivot_wider(mort, names_from = time.point, values_from = mortality, )
+mort2<-pivot_wider(mort, names_from = time.point, values_from = percent.mort, )
 
 # change missing T1 mort scores to the score at T2 to be conservative
 mort2<-mort2 %>%
   mutate(T1 = case_when(
-    is.na(T1) & T2 == 5 ~ 5,
-    is.na(T1) & T2 == 3 ~ 3,
-    is.na(T1) & T2 == 2 ~ 2,
-    is.na(T1) & T2 == 1 ~ 1,
+    is.na(T1) & T2 == 100 ~ 100,
+    is.na(T1) & T2 == 95 ~ 95,
+    is.na(T1) & T2 == 40 ~ 40,
+    is.na(T1) & T2 == 25 ~ 25,
+    is.na(T1) & T2 == 30 ~ 30,
+    is.na(T1) & T2 == 0 ~ 0,
     TRUE ~ T1
+  ))
+
+# change missing T2 mort scores to the score at T1 ONLY for 100% mortality
+
+mort2<-mort2 %>%
+  mutate(T2 = case_when(
+    is.na(T2) & T1 == 100 ~ 100,
+    TRUE ~ T2
   ))
 
 mort2<-pivot_longer(mort2, cols = c(T1, T2), names_to = "time.point", values_to = "mortality")
 
 df <- full_join(df, mort2) # we are missing some values
 df <- df %>%
-  mutate(mortality = if_else(time.point == "T0", 1, mortality))
+  mutate(mortality = if_else(time.point == "T0", 0, mortality)) # mortality at T0 is 0
 
-# # some frags have mort data, but nothing else...? FIXED SM 1/28/22
 # df %>% filter(is.na(dom))
 
 # Frags missing mortality data?
@@ -299,7 +308,6 @@ df %>%
   filter(any(is.na(mortality))) %>%
   arrange(frag.id, time.point)
 ```
-
 # Color
 ```{r}
 color <- read_csv("color.score.csv") %>%
@@ -352,3 +360,38 @@ write_csv(df, "all_data_cleaned.csv")
 ```
 
 
+# mortality (factor scores...delete when we switch to percent above)
+```{r}
+ 
+mort<-read_csv("UROP_mortality.csv")
+mort$frag.id <- as.factor(as.character(mort$frag.id))
+
+mort <- as_tibble(mort)
+mort<-drop_na(mort)
+mort2<-pivot_wider(mort, names_from = time.point, values_from = mortality, )
+
+# change missing T1 mort scores to the score at T2 to be conservative
+mort2<-mort2 %>%
+  mutate(T1 = case_when(
+    is.na(T1) & T2 == 5 ~ 5,
+    is.na(T1) & T2 == 3 ~ 3,
+    is.na(T1) & T2 == 2 ~ 2,
+    is.na(T1) & T2 == 1 ~ 1,
+    TRUE ~ T1
+  ))
+
+mort2<-pivot_longer(mort2, cols = c(T1, T2), names_to = "time.point", values_to = "mortality")
+
+df <- full_join(df, mort2) # we are missing some values
+df <- df %>%
+  mutate(mortality = if_else(time.point == "T0", 1, mortality))
+
+# # some frags have mort data, but nothing else...? FIXED SM 1/28/22
+# df %>% filter(is.na(dom))
+
+# Frags missing mortality data?
+df %>%
+  group_by(frag.id) %>%
+  filter(any(is.na(mortality))) %>%
+  arrange(frag.id, time.point)
+```
