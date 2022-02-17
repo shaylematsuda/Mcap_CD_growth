@@ -123,7 +123,7 @@ ggplot(mortres.f, aes(x = light.level, y = mortality_log)) + #ross plot
   geom_jitter() +
   facet_grid(time.point ~ dom)
 
-  #not sure if needed...
+  #not sure if needed...on log scale
 ggplot(mortres.f, aes(x = interaction(dom,time.point), y = mortality_log, color = dom)) +
   facet_wrap(~light.level, 1) + 
    theme_classic()+
@@ -132,7 +132,7 @@ ggplot(mortres.f, aes(x = interaction(dom,time.point), y = mortality_log, color 
 
 # Refit model with filtered dataset: NOW ALL IS SIGNIFICANT
 mod<-lmer(mortality_log ~ dom * light.level * time.point + (1|frag.id) + (1|genotype) + (1|tank), data = mortres.f)
-Anova(mod)
+anova(mod)
 
 emm <- emmeans(mod, ~ dom*light.level|time.point)
 rbind(contrast(emm, method = "pairwise", by = "light.level"), adjust = "fdr")
@@ -141,43 +141,18 @@ data.frame(emm) %>%
   ggplot(aes(x = light.level, y = emmean, color = dom)) +
   geom_point(position = position_dodge(width  = 0.5)) +
   geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL),
-                position = position_dodge(width  = 0.5))
+                position = position_dodge(width  = 0.5))+
+  facet_wrap(~time.point)+
+  theme_classic()
 cld(emm)
   
-#  #cube root
+#  #cube - not any better than log
 # df.mort$mortality_cube<-df.mort$mortality^(1/3)
 # mod<-lmer(mortality_cube ~ dom * light.level * time.point + (1|frag.id) + (1|genotype) + (1|tank), data = df.mort)
 # anova(mod)
 #   hist(residuals(mod)) #normal
 #   shapiro.test(residuals(mod))  #p-value 1.018e-10
 #   qqPlot(residuals(mod)) # residuals not any better than above. I think log is good. 
-  
-  
-
-# T1 only
-    df.mort.T1<-subset(df.mort, time.point=="T1")
-
-    mod<-lmer(mortality ~  dom * light.level + (1|genotype) + (1|tank), data = df.mort.T1)
-    anova(mod) # interaction not sig)
-  
-    hist(residuals(mod)) #normal
-    shapiro.test(residuals(mod))  #p-value 4.698e-16
-    qqPlot(residuals(mod)) #kinda look like crap
-    
-# T2 only
-    df.mort.T2<-subset(df.mort, time.point=="T2")
-
-    mod<-lmer(mortality ~  dom * light.level + (1|genotype) + (1|tank), data = df.mort.T2)
-    anova(mod) # INTERACTION SIGNIFICANT**
-  
-    hist(residuals(mod)) #normal
-    shapiro.test(residuals(mod))  #p-value 2.019e-12
-    qqPlot(residuals(mod)) #kinda look like crap
-             
-        
-
-    
-
 ```
 
 
