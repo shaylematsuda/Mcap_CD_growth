@@ -11,7 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ## Mcap CD growth experiment: Buoyant Weight and qPCR
-
+ 
 #Buoyant WEIGHT
 ```{r}
 #rm(list=ls()) # removes all prior objects
@@ -363,7 +363,7 @@ write_csv(df, "all_data_cleaned.csv")
 # mortality (factor scores...delete when we switch to percent above)
 ```{r}
  
-mort<-read_csv("UROP_mortality.csv")
+morttest<-read_csv("UROP_mortality.csv")
 mort$frag.id <- as.factor(as.character(mort$frag.id))
 
 mort <- as_tibble(mort)

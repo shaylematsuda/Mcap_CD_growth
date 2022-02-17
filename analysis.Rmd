@@ -37,6 +37,17 @@ df <- read_csv("all_data_cleaned.csv") %>%
 
 # Mortality
 ```{r}
+df.mort<-df #make a copy
+df.mort<-df.mort%>%
+  drop_na(mortality) %>% #drop one col of NA in mort
+  drop_na(light.level) %>%
+  drop_na(days) 
+
+#drop the UNKNOWN light levels
+
+#write.csv(df.mort,"dfmort.csv")
+
+#plot
   ggplot(df.mort, aes(x = days, y = mortality, color = dom, group = frag.id)) +  # look at mort/time
    facet_wrap(~light.level) + 
     geom_line()
@@ -49,48 +60,99 @@ df.mort %>%
 
 # boxplot C v D:facet by shade treatment #####
 
-
 df.mort %>%
   group_by(dom, light.level, time.point) %>%
   summarize(mean = mean(mortality, na.rm = T)) %>%
   ggplot(aes(x = ))
 
+# box plot
 ggplot(df.mort, aes(x = time.point, y = mortality, color = dom)) +
-  facet_wrap(~light.level) + 
+  facet_wrap(~light.level, 1) + 
    theme_classic()+
     geom_boxplot()
 
+# individual points
 ggplot(df.mort, aes(x = interaction(dom,time.point), y = mortality, color = dom)) +
-  facet_wrap(~light.level) + 
+  facet_wrap(~light.level, 1) + 
    theme_classic()+
     geom_jitter()+
     scale_y_continuous(breaks=1:6)
-  
 
+# boxplot C v D:facet by shade time #####
+  
+# individual points
+ggplot(df.mort, aes(x = interaction(dom,shade.levels), y = mortality, color = dom)) +
+  facet_wrap(~time.point, 1) + 
+   theme_classic()+
+    geom_jitter()+
+    scale_y_continuous(breaks=1:6)
 
 # models ####
-# lmer <- probably should not use due to normality violations (all significant but time*dom*light interaction) ####
-  
+#new as of 2.16.22 with percent not factor
+
+# lmer
 mod<-lmer(mortality ~ time.point * dom * light.level + (1|frag.id) + (1|genotype) + (1|tank), data = df.mort)
 anova(mod)
 
 hist(residuals(mod)) #normal
 shapiro.test(residuals(mod))  #p-value < 2.2e-16
-qqPlot(residuals(mod)) #kinda look like crap
+qqPlot(residuals(mod)) #not normal
 
 
-#transform data, but it looks like crap still...not sure what else to do but make a factor
-mod<-lmer(log10(mortality) ~ time.point * dom * light.level + (1|frag.id) + (1|genotype) + (1|tank), data = df.mort)
+#transform data
+#log
+df.mort$mortality_log<-log10(1+df.mort$mortality)
+mod<-lmer(mortality_log ~ dom * light.level * time.point + (1|frag.id) + (1|genotype) + (1|tank), data = df.mort)
 anova(mod)
   hist(residuals(mod)) #normal
-  shapiro.test(residuals(mod))  #p-value < 2.2e-16
-  qqPlot(residuals(mod)) #kinda look like crap
+  shapiro.test(residuals(mod))  #p-value 3.483e-10
+  qqPlot(residuals(mod)) # residuals look better, not great but I think ok
   
-mod<-lmer((mortality^(1/3)) ~ time.point * dom * light.level + (1|frag.id) + (1|genotype) + (1|tank), data = df.mort)
-anova(mod)
-  hist(residuals(mod)) #normal
-  shapiro.test(residuals(mod))  #p-value < 2.2e-16
-  qqPlot(residuals(mod)) #kinda look like crap  
+  mortres <- augment(mod)
+    ggplot(mortres, aes(x = .resid, fill = .cooksd > 0.1)) + geom_histogram(bins = 50) 
+            #do we get rid of the handful of samples?
+  
+  
+  # Filter out observations with cooks distance > 0.1
+mortres.f <- mortres %>% filter(.cooksd < 0.1)
+nrow(mortres) - nrow(mortres.f)   # Filtered out 6 observations
+
+# Plot FILTERED growth rates by predictors
+ggplot(mortres.f, aes(x = light.level, y = mortality_log)) + #ross plot
+  geom_boxplot() +
+  geom_jitter() +
+  facet_grid(time.point ~ dom)
+
+  #not sure if needed...
+ggplot(mortres.f, aes(x = interaction(dom,time.point), y = mortality_log, color = dom)) +
+  facet_wrap(~light.level, 1) + 
+   theme_classic()+
+    geom_jitter()+
+    scale_y_continuous(breaks=1:6)
+
+# Refit model with filtered dataset: NOW ALL IS SIGNIFICANT
+mod<-lmer(mortality_log ~ dom * light.level * time.point + (1|frag.id) + (1|genotype) + (1|tank), data = mortres.f)
+Anova(mod)
+
+emm <- emmeans(mod, ~ dom*light.level|time.point)
+rbind(contrast(emm, method = "pairwise", by = "light.level"), adjust = "fdr")
+
+data.frame(emm) %>%
+  ggplot(aes(x = light.level, y = emmean, color = dom)) +
+  geom_point(position = position_dodge(width  = 0.5)) +
+  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL),
+                position = position_dodge(width  = 0.5))
+cld(emm)
+  
+#  #cube root
+# df.mort$mortality_cube<-df.mort$mortality^(1/3)
+# mod<-lmer(mortality_cube ~ dom * light.level * time.point + (1|frag.id) + (1|genotype) + (1|tank), data = df.mort)
+# anova(mod)
+#   hist(residuals(mod)) #normal
+#   shapiro.test(residuals(mod))  #p-value 1.018e-10
+#   qqPlot(residuals(mod)) # residuals not any better than above. I think log is good. 
+  
+  
 
 # T1 only
     df.mort.T1<-subset(df.mort, time.point=="T1")
@@ -113,67 +175,9 @@ anova(mod)
     qqPlot(residuals(mod)) #kinda look like crap
              
         
-##### GLMER tests  with mort as numeric ####
-# glmer - full model (dom, light, time all significant, no interactions)
-  mod <- glmer(mortality ~ dom * light.level *time.point + (1|frag.id) + (1|genotype) + (1|tank), family=poisson(), data = df.mort)
-    Anova(mod)
-
-  # by time only (significant)
-  mod <- glmer(mortality ~ time.point +  (1|genotype) +(1|tank) , family=poisson(), data = df.mort)
-    Anova(mod)
-    
-  # by time * dom (time, dom are sig, not interaction)
-  mod <- glmer(mortality ~ time.point * dom + (1|genotype) +(1|tank) , family=poisson(), data = df.mort)
-    Anova(mod)
-    
-# subset T1 only
-    df.mort.T1<-subset(df.mort, time.point=="T1")
-    
-    # dom * light.level 
-        # glmer <- singularities (dom is sig)
-        mod <- glmer(mortality ~  dom *light.level + (1|genotype) +(1|tank), family=poisson(), data = df.mort.T1)
-             Anova(mod)
-        # lmer T1 only (dom and light sig, not interaction)
-        mod <- lmer(mortality ~  dom *light.level + (1|genotype) +(1|tank), data = df.mort.T1)
-             Anova(mod)
-
-# subset T2 only
-    df.mort.T2<-subset(df.mort, time.point=="T2")
-
-    # dom * light.level <- model failed to converge
-      
-      #glmer singularities (dom and light sig, not interaction)
-        mod <- glmer(mortality ~  dom * light.level + (1|genotype) +(1|tank) , family=poisson(), data = df.mort.T2)
-             Anova(mod)  
-             
-########  try again with mortality as a factor  ###
-df.mort$mortatlity.f<-as.factor(as.character(df.mort$mortality))
-
-# ordering the levels
-  df.mort$mortatlity.f <- ordered(df.mort$mortatlity.f, levels = c("1", "2","3","4","5","6"))         
-     is.ordered(df.mort$mortatlity.f) #check
-               
 
     
-# try again ordinal factor, ordered logistic regression model, https://stats.oarc.ucla.edu/r/dae/ordinal-logistic-regression/
-require(foreign)
-require(ggplot2)
-require(MASS)
-require(Hmisc)
-require(reshape2)
-             
 
-# model for ordered factor: polr()    
-mod <- polr(mortatlity.f ~ dom + light.level + time.point, data = df.mort, Hess=TRUE)
-summary(mod)
-(ctable <- coef(summary(mod)))
-p <- pnorm(abs(ctable[, "t value"]), lower.tail = FALSE) * 2
-(ctable <- cbind(ctable, "p value" = p))
-
-
-
-
-# Lastly, changing mort scores into perent. 1=.2, 2=.15, 2=.38, 3=.63, 4=.875, 5=99.5
 ```
 
 

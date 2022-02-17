@@ -1,5 +1,5 @@
 frag.id,days,time.point,light.level,genotype,big.tank,tank,depth.m,Dry.Weigh.g,propD,dom,mix,mortality,color,conf
-1,60,T2,Low Shade,852,13,2,2.7,2.5823487296998184,NA,D,NA,0,orange,1
+1,60,T2,Low Shade,852,13,2,2.7,2.5823487296998184,NA,D,NA,10,orange,1
 1,0,T0,Low Shade,852,13,2,2.7,2.493319147588407,0.9026561155403158,D,DC,0,orange,1
 1,31,T1,Low Shade,852,13,2,2.7,2.525769725467942,NA,D,NA,10,orange,1
 2,31,T1,Natural,852,16,9,2.7,2.6976454818976774,NA,D,NA,95,orange,1
@@ -11,7 +11,7 @@ frag.id,days,time.point,light.level,genotype,big.tank,tank,depth.m,Dry.Weigh.g,p
 4,31,T1,Medium Shade,852,17,15,2.7,2.1233604810314195,NA,D,NA,0,orange,1
 4,0,T0,Medium Shade,852,17,15,2.7,2.117204949855593,0.9052805544104694,D,DC,0,orange,1
 6,31,T1,Natural,862,13,1,2.9,3.7168524079962473,NA,D,NA,75,orange,1
-6,60,T2,Natural,862,13,1,2.9,3.654111546766757,0.9709010485310224,D,DC,40,orange,1
+6,60,T2,Natural,862,13,1,2.9,3.654111546766757,0.9709010485310224,D,DC,75,orange,1
 6,1,T0,Natural,862,13,1,2.9,3.660169499587516,0.9844619389914544,D,DC,0,orange,1
 7,60,T2,Low Shade,862,17,14,2.9,2.7481114151168993,NA,D,NA,100,orange,1
 7,0,T0,Low Shade,862,17,14,2.9,5.708766185073931,0.9902928033999095,D,DC,0,orange,1
@@ -70,7 +70,7 @@ frag.id,days,time.point,light.level,genotype,big.tank,tank,depth.m,Dry.Weigh.g,p
 31,60,T2,Natural,876,16,9,2,5.933065794176739,0.992869629384916,D,DC,0,orange,1
 31,0,T0,Natural,876,16,9,2,5.587387885299587,0.9757631903416518,D,DC,0,orange,1
 31,31,T1,Natural,876,16,9,2,5.714917366862723,NA,D,NA,0,orange,1
-32,60,T2,Low Shade,876,14,6,2,2.4185264505879456,NA,D,NA,25,orange,1
+32,60,T2,Low Shade,876,14,6,2,2.4185264505879456,NA,D,NA,30,orange,1
 32,31,T1,Low Shade,876,14,6,2,2.4550293784620436,NA,D,NA,30,orange,1
 32,1,T0,Low Shade,876,14,6,2,2.3902291849344803,0.9846662755103324,D,DC,0,orange,1
 33,0,T0,Medium Shade,876,13,4,2,3.5812196594572874,0.9801435492024309,D,DC,0,orange,1
@@ -184,7 +184,7 @@ frag.id,days,time.point,light.level,genotype,big.tank,tank,depth.m,Dry.Weigh.g,p
 81,31,T1,Medium Shade,911,17,15,unknown,3.15267351813439,NA,D,NA,0,orange,1
 81,60,T2,Medium Shade,911,17,15,unknown,3.1646301511973283,NA,D,NA,15,orange,1
 81,0,T0,Medium Shade,911,17,15,unknown,3.1566801438769967,NA,D,NA,0,orange,1
-82,60,T2,Low Shade,911,14,6,unknown,5.654011706302923,0.9788433143108212,D,DC,75,orange,1
+82,60,T2,Low Shade,911,14,6,unknown,5.654011706302923,0.9788433143108212,D,DC,80,orange,1
 82,31,T1,Low Shade,911,14,6,unknown,5.621907172834171,NA,D,NA,80,orange,1
 82,0,T0,Low Shade,911,14,6,unknown,5.635910254502153,NA,D,NA,0,orange,1
 83,60,T2,Natural,911,13,1,unknown,5.11211744075368,1,D,D,0,orange,1
@@ -236,7 +236,7 @@ frag.id,days,time.point,light.level,genotype,big.tank,tank,depth.m,Dry.Weigh.g,p
 108,60,T2,High Shade,881,17,16,2.7,1.3689916045682715,NA,C,NA,45,brown,0.6
 108,0,T0,High Shade,881,17,16,2.7,1.3811389485460202,0.00330757249082724,C,CD,0,brown,0.6
 109,0,T0,Natural,868,14,5,2,5.273838167517142,0.20101044806695767,D,CD,0,orange,1
-109,60,T2,Natural,868,14,5,2,5.471996240043294,0.35392123368758877,D,CD,0,orange,1
+109,60,T2,Natural,868,14,5,2,5.471996240043294,0.35392123368758877,D,CD,10,orange,1
 109,31,T1,Natural,868,14,5,2,5.395386705746437,NA,D,NA,10,orange,1
 110,0,T0,Low Shade,868,13,2,2,3.3851071154019947,NA,D,NA,0,orange,1
 110,60,T2,Low Shade,868,13,2,2,3.4963896300764086,0,D,C,0,orange,1
@@ -270,10 +270,10 @@ frag.id,days,time.point,light.level,genotype,big.tank,tank,depth.m,Dry.Weigh.g,p
 120,0,T0,Medium Shade,866,13,4,2.7,2.0990093244531263,0,C,C,0,orange,0.8
 123,0,T0,Natural,857,13,1,2.7,2.6389460295854184,0,C,C,0,orange,0.8
 123,31,T1,Natural,857,13,1,2.7,2.7239396942860687,NA,C,NA,10,orange,0.8
-123,60,T2,Natural,857,13,1,2.7,2.863433284151957,NA,C,NA,5,orange,0.8
+123,60,T2,Natural,857,13,1,2.7,2.863433284151957,NA,C,NA,10,orange,0.8
 124,31,T1,Natural,857,13,1,2.7,4.109163469063387,NA,C,NA,15,orange,0.8
 124,0,T0,Natural,857,13,1,2.7,3.9472664241590834,0,C,C,0,orange,0.8
-124,60,T2,Natural,857,13,1,2.7,4.549941146787575,0,C,C,0,orange,0.8
+124,60,T2,Natural,857,13,1,2.7,4.549941146787575,0,C,C,15,orange,0.8
 126,31,T1,Natural,863,13,1,3,4.626961074154287,NA,C,NA,0,orange,1
 126,0,T0,Natural,863,13,1,3,4.5904923038952665,0,C,C,0,orange,1
 126,60,T2,Natural,863,13,1,3,4.691458703895992,0,C,C,20,orange,1
@@ -324,7 +324,7 @@ frag.id,days,time.point,light.level,genotype,big.tank,tank,depth.m,Dry.Weigh.g,p
 142,0,T0,Low Shade,UNKNOWN1,17,14,unknown,3.4437555934840627,NA,C,NA,0,NA,NA
 144,31,T1,Medium Shade,UNKNOWN2,17,15,unknown,1.4539975926981448,NA,C,NA,65,NA,NA
 144,0,T0,Medium Shade,UNKNOWN2,17,15,unknown,1.44587666470561,0,C,C,0,NA,NA
-144,60,T2,Medium Shade,UNKNOWN2,17,15,unknown,1.4721138251687553,NA,C,NA,0,NA,NA
+144,60,T2,Medium Shade,UNKNOWN2,17,15,unknown,1.4721138251687553,NA,C,NA,80,NA,NA
 146,1,T0,Medium Shade,861,16,11,2.1,5.5023697779048195,0,C,C,0,orange,0.8
 146,31,T1,Medium Shade,861,16,11,2.1,5.553166742734033,NA,C,NA,0,orange,0.8
 146,60,T2,Medium Shade,861,16,11,2.1,5.581212599956717,0,C,C,0,orange,0.8
@@ -585,6 +585,6 @@ frag.id,days,time.point,light.level,genotype,big.tank,tank,depth.m,Dry.Weigh.g,p
 288,60,T2,Medium Shade,853,17,15,3.2,6.177608901030108,0,C,C,0,brown,1
 288,0,T0,Medium Shade,853,17,15,3.2,6.155493193532304,0,C,C,0,brown,1
 2,NA,T2,Natural,852,16,9,2.7,NA,NA,D,NA,100,orange,NA
-276,NA,T2,High Shade,900,13,3,2.8,NA,NA,C,NA,100,brown,NA
 25,NA,T1,NA,NA,NA,NA,NA,NA,NA,NA,NA,0,NA,NA
 25,NA,T2,NA,NA,NA,NA,NA,NA,NA,NA,NA,0,NA,NA
+276,NA,T2,High Shade,900,13,3,2.8,NA,NA,C,NA,100,brown,NA
