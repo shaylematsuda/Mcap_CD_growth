@@ -91,7 +91,7 @@ ggplot(df.mort, aes(x = interaction(dom,shade.levels), y = mortality, color = do
 #new as of 2.16.22 with percent not factor
 
 # lmer
-mod<-lmer(mortality ~ time.point * dom * light.level + (1|frag.id) + (1|genotype) + (1|tank), data = df.mort)
+mod<-lmer(mortality ~ dom  *light.level * time.point + (1|frag.id) + (1|genotype) + (1|tank), data = df.mort)
 anova(mod)
 
 hist(residuals(mod)) #normal

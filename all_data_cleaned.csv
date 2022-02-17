@@ -141,7 +141,7 @@ frag.id,days,time.point,light.level,genotype,big.tank,tank,depth.m,Dry.Weigh.g,p
 56,60,T2,Natural,916,14,5,unknown,8.323265960440612,NA,D,NA,0,orange,1
 57,31,T1,Low Shade,909,17,14,unknown,1.6582334417261921,NA,D,NA,20,orange,1
 57,0,T0,Low Shade,909,17,14,unknown,1.658220383998637,NA,D,NA,0,orange,1
-57,60,T2,Low Shade,909,17,14,unknown,1.6682520523661886,NA,D,NA,0,orange,1
+57,60,T2,Low Shade,909,17,14,unknown,1.6682520523661886,NA,D,NA,20,orange,1
 58,0,T0,Medium Shade,909,16,11,unknown,2.1799445286090746,NA,D,NA,0,orange,1
 58,60,T2,Medium Shade,909,16,11,unknown,2.185975566999864,NA,D,NA,0,orange,1
 58,31,T1,Medium Shade,909,16,11,unknown,2.1779892813530948,NA,D,NA,0,orange,1
