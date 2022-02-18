@@ -75,8 +75,7 @@ ggplot(df.mort, aes(x = time.point, y = mortality, color = dom)) +
 ggplot(df.mort, aes(x = interaction(dom,time.point), y = mortality, color = dom)) +
   facet_wrap(~light.level, 1) + 
    theme_classic()+
-    geom_jitter()+
-    scale_y_continuous(breaks=1:6)
+    geom_jitter()
 
 # boxplot C v D:facet by shade time #####
   
@@ -102,7 +101,8 @@ qqPlot(residuals(mod)) #not normal
 #transform data
 #log
 df.mort$mortality_log<-log10(1+df.mort$mortality)
-mod<-lmer(mortality_log ~ dom * light.level * time.point + (1|frag.id) + (1|genotype) + (1|tank), data = df.mort)
+df.mort$mortality_asin<-asin(sqrt(df.mort$mortality/100))
+mod<-lmer(mortality_asin ~ dom * light.level * time.point + (1|frag.id) + (1|genotype) + (1|tank), data = df.mort)
 anova(mod)
   hist(residuals(mod)) #normal
   shapiro.test(residuals(mod))  #p-value 3.483e-10
@@ -111,6 +111,13 @@ anova(mod)
   mortres <- augment(mod)
     ggplot(mortres, aes(x = .resid, fill = .cooksd > 0.1)) + geom_histogram(bins = 50) 
             #do we get rid of the handful of samples?
+    
+  # plot with cooks color
+    ggplot(mortres, aes(x = interaction(dom,time.point), y = mortality_asin, color = .cooksd > 0.1)) +
+  facet_wrap(~light.level, 1) + 
+   theme_classic()+
+    geom_jitter()+
+    scale_y_continuous(breaks=1:6)
   
   
   # Filter out observations with cooks distance > 0.1
