@@ -83,11 +83,18 @@ loggers_wide <- loggers %>%
   pivot_wider(names_from="logger",values_from="calibrated") %>%
   arrange(datetime)
 
+
+# trim out the time frame of the experiment, Oct 29-Jan 8. and remove data during readout times. 
+# subset date time
+loggers_wide <- loggers_wide %>%
+                        filter(datetime >= as.Date('2017-10-29') & datetime <= as.Date('2018-01-08')) #keep dates
+
 # save the wide version of the file to CSV
 #write_csv(loggers_wide,"loggers_wide.csv")
 
 #REMOVE LOGGER 6377 UNLESS YOU LOCATE CALIBRATION FILE
 loggers_wide = subset(loggers_wide, select = -c(logger_6377) )
+
 
 Mcap.light<-loggers_wide #make a copy
 
@@ -129,8 +136,32 @@ Mcap.light.2.melt<-melt(Mcap.light.2, id.vars = c("datetime")) #melt
 Mcap.light.2.melt<-rename(Mcap.light.2.melt, Light.logger = "variable")
 Mcap.light.2.melt<-rename(Mcap.light.2.melt, Light = "value")
 
+
+
+#cut out times when data was pulled 
+Mcap.light.2.melt<-Mcap.light.2.melt%>%
+mutate(Light = if_else(datetime > '2017-11-18 10:00:00' & datetime < '2017-11-18 17:00:00', "NA", as.character(Light)))%>%
+mutate(Light=as.numeric(Light))%>%
+mutate(Light = if_else(datetime > '2017-12-07 10:00:00' & datetime < '2017-12-07 17:00:00', "NA", as.character(Light)))%>%
+mutate(Light=as.numeric(Light))%>%
+mutate(Light = if_else(datetime > '2017-12-08 10:00:00' & datetime < '2017-12-08 17:00:00', "NA", as.character(Light)))%>%
+mutate(Light=as.numeric(Light))%>%
+mutate(Light = if_else(datetime > '2017-12-21 10:00:00' & datetime < '2017-12-21 17:00:00', "NA", as.character(Light)))%>%
+mutate(Light=as.numeric(Light))
+
+
+
 #merge with metadata
 Mcap.light.2.melt.meta<-merge(Mcap.light.2.melt, logger.df)
+
+
+
+
+
+
+
+
+
 
 
 light_plot<-ggplot(data=Mcap.light.2.melt.meta, aes(x=datetime, y=Light, group = Shade, color=Shade)) +
