@@ -9,10 +9,11 @@ Original script by M. Hoban
 ```{r}
 #rm(list=ls())
 
-library(tidyverse)
 library(fs)
 library(lubridate)# for date parsing
 library(reshape2)
+library(tidyverse)
+
 
 #load data
 csv_files <- dir_ls("logger_files",glob="*.CSV",recurse = TRUE)
@@ -132,11 +133,10 @@ logger.df<-read.csv("UROP_logger_locations.csv")
 
 #melt the df and then add metadata
 Mcap.light.2.melt<-melt(Mcap.light.2, id.vars = c("datetime")) #melt
+ Mcap.light.2.melt<- tibble(Mcap.light.2.melt)
   #rename cols
-Mcap.light.2.melt<-rename(Mcap.light.2.melt, Light.logger = "variable")
+Mcap.light.2.melt<-rename(Mcap.light.2.melt, Light.logger = "variable") #WHY ISN"T THIS RUNNING NOW NOTHING CHANGED????
 Mcap.light.2.melt<-rename(Mcap.light.2.melt, Light = "value")
-
-
 
 #cut out times when data was pulled 
 Mcap.light.2.melt<-Mcap.light.2.melt%>%
@@ -149,20 +149,8 @@ mutate(Light=as.numeric(Light))%>%
 mutate(Light = if_else(datetime > '2017-12-21 10:00:00' & datetime < '2017-12-21 17:00:00', "NA", as.character(Light)))%>%
 mutate(Light=as.numeric(Light))
 
-
-
 #merge with metadata
 Mcap.light.2.melt.meta<-merge(Mcap.light.2.melt, logger.df)
-
-
-
-
-
-
-
-
-
-
 
 light_plot<-ggplot(data=Mcap.light.2.melt.meta, aes(x=datetime, y=Light, group = Shade, color=Shade)) +
   # geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
@@ -190,6 +178,29 @@ light_plot<-ggplot(data=Mcap.light.2.melt.meta, aes(x=datetime, y=Light, group =
   ggtitle("UROP light")+
   theme(plot.title = element_text(size=20, face = "italic"));light_plot 
 
+
+# calculate mean light level (low light level could be due to algal overgrowth)
+
+mean.light<- ddply(Mcap.light.2.melt.meta, c("Shade"), summarise, 
+                 N    = length(Light[!is.na(Light)]), 
+                 mean = mean(Light, na.rm=TRUE), 
+                 sd   = sd(Light, na.rm=TRUE),
+                 se   = sd / sqrt(N), 
+                 max = max(Light, na.rm=TRUE) 
+);mean.light
+
+# calc mean light by time point. 
+  # T1 subset
+Mcap.light.T1 <- Mcap.light.2.melt.meta %>%
+                        filter(datetime >= as.Date('2017-10-29') & datetime <= as.Date('2017-11-29')) #why not working
+  
+mean.light.T1<- ddply(Mcap.light.T1, c("Shade"), summarise,  
+                 N    = length(value[!is.na(value)]), 
+                 mean = mean(value, na.rm=TRUE), 
+                 sd   = sd(value, na.rm=TRUE),
+                 se   = sd / sqrt(N), 
+                 max = max(value, na.rm=TRUE) 
+  );mean.light.T1
 ```
 
 

@@ -110,8 +110,7 @@ anova(mod)
   
   mortres <- augment(mod)
     ggplot(mortres, aes(x = .resid, fill = .cooksd > 0.1)) + geom_histogram(bins = 50) 
-            #do we get rid of the handful of samples?
-  
+            #do we get rid of the 5 samples identified here? 
   
   # Filter out observations with cooks distance > 0.1
 mortres.f <- mortres %>% filter(.cooksd < 0.1)
@@ -137,6 +136,8 @@ anova(mod)
 emm <- emmeans(mod, ~ dom*light.level|time.point)
 rbind(contrast(emm, method = "pairwise", by = "light.level"), adjust = "fdr")
 
+
+## *********** Ross ********* - in this plot, why would T0 have wider bars for D than C if everything is 0% mortality)?
 data.frame(emm) %>%
   ggplot(aes(x = light.level, y = emmean, color = dom)) +
   geom_point(position = position_dodge(width  = 0.5)) +
