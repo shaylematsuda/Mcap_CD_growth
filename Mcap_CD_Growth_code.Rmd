@@ -8,6 +8,8 @@ editor_options:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+options(digits = 5)              # Modify global options - set sig figs to 5 digits
+
 ```
 
 ## Mcap CD growth experiment: Buoyant Weight and qPCR

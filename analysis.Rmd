@@ -23,6 +23,8 @@ library(RColorBrewer)
 library(colorRamps)
 
 library(tidyverse)
+
+options(digits = 5)              # Modify global options - set sig figs to 5 digits
 ```
 
 # Load in data
