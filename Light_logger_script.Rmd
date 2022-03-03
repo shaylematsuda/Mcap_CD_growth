@@ -12,8 +12,9 @@ Original script by M. Hoban
 library(fs)
 library(lubridate)# for date parsing
 library(reshape2)
+library(dplyr)
+library(plyr)
 library(tidyverse)
-
 
 #load data
 csv_files <- dir_ls("logger_files",glob="*.CSV",recurse = TRUE)
@@ -189,18 +190,39 @@ mean.light<- ddply(Mcap.light.2.melt.meta, c("Shade"), summarise,
                  max = max(Light, na.rm=TRUE) 
 );mean.light
 
-# calc mean light by time point. 
-  # T1 subset
+#Summary across entire experiment
+mySummary <- data.frame(
+aggregate(Light~Shade, data=Mcap.light.2.melt.meta, min),
+aggregate(Light~Shade, data=Mcap.light.2.melt.meta, max),
+aggregate(Light~Shade, data=Mcap.light.2.melt.meta, mean))
+
+mySummary <- mySummary[,c(1,2,4,6)]
+colnames(mySummary) <- c("Shade", "min", "max", "mean")
+mySummary
+
+#summary T0-T1
 Mcap.light.T1 <- Mcap.light.2.melt.meta %>%
                         filter(datetime >= as.Date('2017-10-29') & datetime <= as.Date('2017-11-29')) #why not working
-  
-mean.light.T1<- ddply(Mcap.light.T1, c("Shade"), summarise,  
-                 N    = length(value[!is.na(value)]), 
-                 mean = mean(value, na.rm=TRUE), 
-                 sd   = sd(value, na.rm=TRUE),
-                 se   = sd / sqrt(N), 
-                 max = max(value, na.rm=TRUE) 
-  );mean.light.T1
+mySummary <- data.frame(
+aggregate(Light~Shade, data=Mcap.light.T1, min),
+aggregate(Light~Shade, data=Mcap.light.T1, max),
+aggregate(Light~Shade, data=Mcap.light.T1, mean))
+
+mySummary <- mySummary[,c(1,2,4,6)]
+colnames(mySummary) <- c("Shade", "min", "max", "mean")
+mySummary  
+
+#summary T1-TF
+Mcap.light.TF <- Mcap.light.2.melt.meta %>%
+                        filter(datetime >= as.Date('2017-11-30') & datetime <= as.Date('2018-01-08')) #why not working
+mySummary <- data.frame(
+aggregate(Light~Shade, data=Mcap.light.TF, min),
+aggregate(Light~Shade, data=Mcap.light.TF, max),
+aggregate(Light~Shade, data=Mcap.light.TF, mean))
+
+mySummary <- mySummary[,c(1,2,4,6,8)]
+colnames(mySummary) <- c("Shade", "min", "max", "mean")
+mySummary  
 ```
 
 
@@ -324,6 +346,40 @@ temp_plot<-ggplot(data=Mcap.temp.meta.melt, aes(x=datetime, y=temp, group = Shad
   ylab(expression(paste("temp"))) +
   ggtitle("UROP temp")+
   theme(plot.title = element_text(size=20, face = "italic"));temp_plot 
+
+Mcap.temp.meta.melt$temp<-as.numeric(Mcap.temp.meta.melt$temp)
+#Summary across entire experiment
+mySummary.temp <- data.frame(
+aggregate(temp~Shade, data=Mcap.temp.meta.melt, max),
+aggregate(temp~Shade, data=Mcap.temp.meta.melt, mean))
+
+mySummary.temp <- mySummary.temp[,c(1,2,4,6)]
+colnames(mySummary.temp) <- c("Shade", "min", "max", "mean")
+mySummary.temp
+
+#summary T0-T1
+Mcap.temp.T1 <- Mcap.temp.meta.melt %>%
+                        filter(datetime >= as.Date('2017-10-29') & datetime <= as.Date('2017-11-29')) #why not working
+mySummary.temp <- data.frame(
+aggregate(temp~Shade, data=Mcap.temp.T1, min),
+aggregate(temp~Shade, data=Mcap.temp.T1, max),
+aggregate(temp~Shade, data=Mcap.temp.T1, mean))
+
+mySummary.temp <- mySummary.temp[,c(1,2,4,6)]
+colnames(mySummary.temp) <- c("Shade", "min", "max", "mean")
+mySummary.temp  
+
+#summary T1-TF
+Mcap.temp.TF <- Mcap.temp.2.melt.meta %>%
+                        filter(datetime >= as.Date('2017-11-30') & datetime <= as.Date('2018-01-08')) #why not working
+mySummary.temp <- data.frame(
+aggregate(temp~Shade, data=Mcap.temp.TF, min),
+aggregate(temp~Shade, data=Mcap.temp.TF, max),
+aggregate(temp~Shade, data=Mcap.temp.TF, mean))
+
+mySummary.temp <- mySummary.temp[,c(1,2,4,6,8)]
+colnames(mySummary.temp) <- c("Shade", "min", "max", "mean")
+mySummary.temp  
 
 ```
 
