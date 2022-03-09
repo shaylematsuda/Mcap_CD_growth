@@ -59,6 +59,7 @@ df.mort %>%
               names_from = time.point,
               values_from = mortality) %>%
   filter(T2 < T1)
+# RC: Why are there still 3 frags that are less dead at T2?
 
 # boxplot C v D:facet by shade treatment #####
 
@@ -206,36 +207,16 @@ ggplot(grres, aes(x = .resid, fill = .cooksd > 0.1)) + geom_histogram(bins = 50)
 grres.f <- grres %>% filter(.cooksd < 0.1)
 nrow(grres) - nrow(grres.f)   # Filtered out 6 observations
 
-# Plot FILTERED growth rates by predictors
-ggplot(grres.f, aes(x = light.level, y = growth.rate)) +
-  geom_boxplot() +
-  geom_jitter() +
-  facet_grid(time.point ~ dom)
-
-# Refit model with filtered dataset
-mod <- lmer(growth.rate ~ dom * light.level * time.point + (1|genotype) + (1|frag.id) + (1|tank), data = grres.f)
-Anova(mod)
-
-emm <- emmeans(mod, ~ dom*light.level)
-rbind(contrast(emm, method = "pairwise", by = "light.level"), adjust = "fdr")
-
-data.frame(emm) %>%
-  ggplot(aes(x = light.level, y = emmean, color = dom)) +
-  geom_point(position = position_dodge(width  = 0.5)) +
-  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL),
-                position = position_dodge(width  = 0.5))
-cld(emm)
 
 ##############################################
 
 # FILTER dataset even more by mortality scores
-# Plot growth rate filtering by mortality
 
 grres.f %>% 
   left_join(df) %>%
   ggplot(aes(x = light.level, y = growth.rate)) +
   geom_boxplot() +
-  geom_jitter(aes(color = mortality <= 1), alpha = 0.7) +
+  geom_jitter(aes(color = mortality <= 20), alpha = 0.7) +
   facet_grid(time.point ~ dom) +
   ylim(-0.1, 0.5)
 
@@ -243,18 +224,20 @@ grres.f %>%
 # Run stats on MORTALITY-FILTERED dataset
 grres.ff <- grres.f %>%
   left_join(df) %>%
-  filter(mortality <= 1 & !is.na(mortality))
+  filter(mortality <= 0 & !is.na(mortality))
   
-mod <- lmer(growth.rate ~ dom * light.level * time.point + (1|genotype) + (1|frag.id) + (1|tank), data = grres.ff)
+mod <- lmer(growth.rate ~ dom * light.level * time.point + (1|genotype/frag.id) + (1|tank), data = grres.ff)
 Anova(mod)
-# symbiont x light.level interaction goes away when corals with high partial mortality are excluded. This is primarily driven by two D fragments under Natural light with mortality levels >2 that, when included, bring down the D/Natural growth rate enough to make it significantly less than the C/Natural growth rate. When these two fragments are excluded, the difference between C and D under natural light, and therefore the symbiont x light interaction in the model, disappear...
-
+# 3-way interaction is not significant
 emm <- emmeans(mod, ~ dom*light.level|time.point)
-cld(emm)
-# No C-D difference when all treatments compared pairwise
-rbind(contrast(emm, method = "pairwise", by = "light.level"), adjust = "fdr")
-# marginally significant C-D difference at Natural light when only 4 tests conducted...
+rbind(contrast(emm, method = "pairwise", by = c("light.level", "time.point")), adjust = "fdr")
+# but multiple testing shows C > D at T2, but not at T1...
+rbind(contrast(emm, method = "pairwise", by = c("dom", "light.level")), adjust = "fdr")
+emm
+# both C and D grow twice as fast at T2 compared to T1.
+# C grows 40% faster than D at T1, and 38% faster than D at T2...
 
+# Plot
 data.frame(emm) %>%
   ggplot(aes(x = light.level, y = emmean, color = dom)) +
   facet_wrap(~time.point) +
@@ -262,6 +245,28 @@ data.frame(emm) %>%
   geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL),
                 position = position_dodge(width  = 0.5))
 
+
+#  Could also fit separate models by timepoint
+mod1 <- lmer(growth.rate ~ dom * light.level + (1|genotype) + (1|tank), 
+             data = filter(grres.ff, time.point == "T1"))
+Anova(mod1)
+emm1 <- emmeans(mod1, ~ dom*light.level)
+rbind(contrast(emm1, method = "pairwise", by = "light.level", adjust = "fdr"))
+# Shows C > D at T1
+
+mod2 <- lmer(growth.rate ~ dom * light.level + (1|genotype) + (1|tank), 
+             data = filter(grres.ff, time.point == "T2"))
+Anova(mod2)
+emm2 <- emmeans(mod2, ~ dom*light.level)
+rbind(contrast(emm2, method = "pairwise", by = "light.level", adjust = "fdr"))
+# Shows C > D at T2
+
+
+
+# Model without time.point
+mod <- lmer(growth.rate ~ dom * light.level + (1|genotype) + (1|frag.id) + (1|tank), data = grres.ff)
+Anova(mod)
+emmeans(mod, ~ dom*light.level)
 ```
 
 ```{r}
@@ -282,21 +287,4 @@ data.frame(emm) %>%
 
 
 
-```{r}
-# What about modeling raw weight data over time?
-
-mod <- lmer(Dry.Weigh.g ~ days * light.level * dom + (1|frag.id) + (1|genotype) + (1|tank), data = df)
-moddf <- augment(mod)
-moddf <- filter(moddf, .cooksd < 1)
-mod <- lmer(Dry.Weigh.g ~ days * light.level * dom + (1|frag.id) + (1|genotype) + (1|tank), data = moddf)
-Anova(mod)
-hist(resid(mod))
-emm <- emtrends(mod, ~ dom*light.level, var = "days")
-cld(emm)
-data.frame(emm) %>%
-  ggplot(aes(x = light.level, y = days.trend, color = dom)) +
-  geom_point(position = position_dodge(width  = 0.5)) +
-  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL),
-                position = position_dodge(width  = 0.5))
-```
 
