@@ -11,9 +11,6 @@ Original script by M. Hoban
 
 library(fs)
 library(lubridate)# for date parsing
-library(reshape2)
-library(dplyr)
-library(plyr)
 library(tidyverse)
 
 #load data
@@ -87,9 +84,22 @@ loggers_wide <- loggers %>%
 
 
 # trim out the time frame of the experiment, Oct 29-Jan 8. and remove data during readout times. 
-# subset date time
+# subset date time of experiment
 loggers_wide <- loggers_wide %>%
-                        filter(datetime >= as.Date('2017-10-29') & datetime <= as.Date('2018-01-08')) #keep dates
+                        filter(datetime >= as.Date('2017-10-29') & datetime <= as.Date('2018-01-08')) #
+
+loggers_wide$date<-date(loggers_wide$datetime) #pull out date
+
+#cut out times when data was pulled from logger, #this removes some of it but not all and not sure why but oh well?
+
+  loggers_wide<-loggers_wide%>%
+     filter(!(date == '2017-11-01'))%>%
+     filter(!(date == '2017-11-18'))%>%
+     filter(!(date == '2017-11-29'))%>%
+     filter(!(date == '2017-11-04'))%>%
+     filter(!(date == '2017-11-06'))%>%
+     filter(!(date == '2017-12-07'))%>%
+     filter(!(date == '2017-12-08'))
 
 # save the wide version of the file to CSV
 #write_csv(loggers_wide,"loggers_wide.csv")
@@ -128,36 +138,30 @@ Mcap.light$logger_10957CAL <- Mcap.light$logger_10957 * 0.05758
 # logger 10959 calibration: y=0.06052x R^2=1
 Mcap.light$logger_10959CAL <- Mcap.light$logger_10959 * 0.06052
 
-Mcap.light.2<- subset(Mcap.light, select = -c( 2 : 16 ))
+Mcap.light.2<- subset(Mcap.light, select = c( 1, 18:28)) #keep cols you need
 
 logger.df<-read.csv("UROP_logger_locations.csv")
 
 #melt the df and then add metadata
-Mcap.light.2.melt<-melt(Mcap.light.2, id.vars = c("datetime")) #melt
- Mcap.light.2.melt<- tibble(Mcap.light.2.melt)
-  #rename cols
-Mcap.light.2.melt<-rename(Mcap.light.2.melt, Light.logger = "variable") #WHY ISN"T THIS RUNNING NOW NOTHING CHANGED????
-Mcap.light.2.melt<-rename(Mcap.light.2.melt, Light = "value")
-
-#cut out times when data was pulled 
-Mcap.light.2.melt<-Mcap.light.2.melt%>%
-mutate(Light = if_else(datetime > '2017-11-18 10:00:00' & datetime < '2017-11-18 17:00:00', "NA", as.character(Light)))%>%
-mutate(Light=as.numeric(Light))%>%
-mutate(Light = if_else(datetime > '2017-12-07 10:00:00' & datetime < '2017-12-07 17:00:00', "NA", as.character(Light)))%>%
-mutate(Light=as.numeric(Light))%>%
-mutate(Light = if_else(datetime > '2017-12-08 10:00:00' & datetime < '2017-12-08 17:00:00', "NA", as.character(Light)))%>%
-mutate(Light=as.numeric(Light))%>%
-mutate(Light = if_else(datetime > '2017-12-21 10:00:00' & datetime < '2017-12-21 17:00:00', "NA", as.character(Light)))%>%
-mutate(Light=as.numeric(Light))
+Mcap.light.2.melt<-
+  Mcap.light.2%>% 
+   pivot_longer(
+    cols=!datetime,
+    names_to="Light.logger",
+    values_to = "Light")
 
 #merge with metadata
-Mcap.light.2.melt.meta<-merge(Mcap.light.2.melt, logger.df)
+Mcap.light.2.melt.meta<-inner_join(Mcap.light.2.melt, logger.df, by="Light.logger")
+Mcap.light.2.melt.meta$Light.logger<-as.factor(Mcap.light.2.melt.meta$Light.logger)
+Mcap.light.2.melt.meta$Shade<-as.factor(Mcap.light.2.melt.meta$Shade)
+Mcap.light.2.melt.meta$Temp.logger<-as.factor(Mcap.light.2.melt.meta$Temp.logger)
+Mcap.light.2.melt.meta$Tank<-as.factor(Mcap.light.2.melt.meta$Tank)
 
 light_plot<-ggplot(data=Mcap.light.2.melt.meta, aes(x=datetime, y=Light, group = Shade, color=Shade)) +
   # geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
   #               width=0.1, show.legend = F)+
   #geom_point(aes(color=Treatment), size=4, show.legend = F)+
-  geom_line(aes(color=Shade), linetype=2, show.legend = F)+
+  geom_line(aes(color=Shade), linetype=2, show.legend = T)+
   #scale_color_manual(values=c("dodgerblue3", "darkred"))+
   xlab("") + #Label the X Axis
   #ylim(0, 11) + #set Y limits
@@ -179,50 +183,67 @@ light_plot<-ggplot(data=Mcap.light.2.melt.meta, aes(x=datetime, y=Light, group =
   ggtitle("UROP light")+
   theme(plot.title = element_text(size=20, face = "italic"));light_plot 
 
+light_plot+facet_wrap(~Shade)
 
-# calculate mean light level (low light level could be due to algal overgrowth)
 
-mean.light<- ddply(Mcap.light.2.melt.meta, c("Shade"), summarise, 
-                 N    = length(Light[!is.na(Light)]), 
-                 mean = mean(Light, na.rm=TRUE), 
-                 sd   = sd(Light, na.rm=TRUE),
-                 se   = sd / sqrt(N), 
-                 max = max(Light, na.rm=TRUE) 
-);mean.light
+# calculate mean light level (low light level could be due to algal overgrowth consider deleting)
+# mean.light<- ddply(Mcap.light.2.melt.meta, c("Shade"), summarise, 
+#                  N    = length(Light[!is.na(Light)]), 
+#                  mean = mean(Light, na.rm=TRUE), 
+#                  sd   = sd(Light, na.rm=TRUE),
+#                  se   = sd / sqrt(N), 
+#                  max = max(Light, na.rm=TRUE) 
+# );mean.light
 
-#Summary across entire experiment
-mySummary <- data.frame(
-aggregate(Light~Shade, data=Mcap.light.2.melt.meta, min),
-aggregate(Light~Shade, data=Mcap.light.2.melt.meta, max),
-aggregate(Light~Shade, data=Mcap.light.2.melt.meta, mean))
+# subset only >0 values (daylight values)
+Mcap.light.2.melt.meta.DAY<-Mcap.light.2.melt.meta %>%
+  filter(Light>=1)
 
-mySummary <- mySummary[,c(1,2,4,6)]
-colnames(mySummary) <- c("Shade", "min", "max", "mean")
-mySummary
+#mean across entire experiment
+ Mcap.light.2.melt.meta.DAY %>%
+  group_by(Shade) %>%
+  summarise(mean=mean(Light), median=(median(Light)), min=(min(Light)))
 
 #summary T0-T1
-Mcap.light.T1 <- Mcap.light.2.melt.meta %>%
+Mcap.light.T1 <- Mcap.light.2.melt.meta.DAY %>%
                         filter(datetime >= as.Date('2017-10-29') & datetime <= as.Date('2017-11-29')) #why not working
-mySummary <- data.frame(
-aggregate(Light~Shade, data=Mcap.light.T1, min),
-aggregate(Light~Shade, data=Mcap.light.T1, max),
-aggregate(Light~Shade, data=Mcap.light.T1, mean))
+ Mcap.light.T1 %>%
+  group_by(Shade) %>%
+  summarise(mean=mean(Light), median=(median(Light)), max=max(Light), min=min(Light))
 
-mySummary <- mySummary[,c(1,2,4,6)]
-colnames(mySummary) <- c("Shade", "min", "max", "mean")
-mySummary  
+  #extract max per day
+  Mcap.light.T1$date<-date(Mcap.light.T1$datetime)
+  T1.max<-Mcap.light.T1 %>%
+    group_by(date,Shade) %>%
+    summarise(max_val = max(Light))
 
-#summary T1-TF
-Mcap.light.TF <- Mcap.light.2.melt.meta %>%
+  # average daily max by shade treatment
+  T1mean<-T1.max%>%
+   group_by(Shade)%>%
+    summarise(mean=mean(max_val))
+    T1mean$time.point<-"T1"
+
+#summary T1-Ts
+Mcap.light.T2 <- Mcap.light.2.melt.meta.DAY %>%
                         filter(datetime >= as.Date('2017-11-30') & datetime <= as.Date('2018-01-08')) #why not working
-mySummary <- data.frame(
-aggregate(Light~Shade, data=Mcap.light.TF, min),
-aggregate(Light~Shade, data=Mcap.light.TF, max),
-aggregate(Light~Shade, data=Mcap.light.TF, mean))
+ Mcap.light.T2 %>%
+  group_by(Shade) %>%
+  summarise(mean=mean(Light), median=(median(Light)), max=max(Light), min=min(Light))
 
-mySummary <- mySummary[,c(1,2,4,6,8)]
-colnames(mySummary) <- c("Shade", "min", "max", "mean")
-mySummary  
+  #extract max per day
+  Mcap.light.T2$date<-date(Mcap.light.T2$datetime)
+  T2.max<-Mcap.light.T2 %>%
+    group_by(date,Shade) %>%
+    summarise(max_val = max(Light))
+
+  # average daily max by shade treatment
+  T2mean<-T2.max%>%
+   group_by(Shade)%>%
+    summarise(mean=mean(max_val))
+    T2mean$time.point<-"T2"
+
+#combine
+Light.by.time<- left_join(T1mean, T2mean, by="Shade")
 ```
 
 
@@ -277,7 +298,7 @@ loggers <- map_dfr(csv_files,function(csv) {
       col_types = "ncncccc",
       col_names = FALSE
     ) %>%
-      rename("datetime" = 1, "Temp" = 2) %>%
+      dplyr::rename("datetime" = 1, "Temp" = 2) %>%
       mutate(
         datetime = parse_date_time(datetime,"m/d/y I:M:S p", tz="HST"),
         logger = factor(str_c("logger_",logger_id))
