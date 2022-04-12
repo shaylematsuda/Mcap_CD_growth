@@ -86,7 +86,7 @@ loggers_wide <- loggers %>%
 # trim out the time frame of the experiment, Oct 29-Jan 8. and remove data during readout times. 
 # subset date time of experiment
 loggers_wide <- loggers_wide %>%
-                        filter(datetime >= as.Date('2017-10-29') & datetime <= as.Date('2018-01-08')) #
+                        filter(datetime >= as.Date('2017-10-29') & datetime < as.Date('2018-01-08')) #
 
 loggers_wide$date<-date(loggers_wide$datetime) #pull out date
 
@@ -184,8 +184,34 @@ light_plot<-ggplot(data=Mcap.light.2.melt.meta, aes(x=datetime, y=Light, group =
   theme(plot.title = element_text(size=20, face = "italic"));light_plot 
 
 light_plot+facet_wrap(~Shade)
+light_plot + xlim(as_datetime("2017-11-30"),  as_datetime("2017-12-01"))
+```
 
 
+```{r}
+# Calculate average daily light integral for each shade treatment
+
+# number of loggers
+Mcap.light.2.melt.meta %>%
+  distinct(Light.logger, Shade) %>%
+  arrange(Shade)
+# 11 loggers
+
+light_res <- Mcap.light.2.melt.meta %>%
+  group_by(Light.logger, date = date(datetime), Shade) %>%     # group by light logger and day
+  summarise(dli = sum(Light, na.rm = T) / n() * 0.0864) %>%    # calc DLI for each logger on each day
+  group_by(Shade) %>%                                          # group by shade treatment
+  summarise(avg_dli = mean(dli))                               # calculate average
+  
+light_res %>%
+  arrange(Shade)
+```
+
+
+```{r}
+  
+  
+  
 # subset only > 0 values (daylight values)
 Mcap.light.2.melt.meta.DAY<-Mcap.light.2.melt.meta %>%
   filter(Light>=1)
