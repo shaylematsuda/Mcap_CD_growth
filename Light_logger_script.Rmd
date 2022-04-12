@@ -186,27 +186,18 @@ light_plot<-ggplot(data=Mcap.light.2.melt.meta, aes(x=datetime, y=Light, group =
 light_plot+facet_wrap(~Shade)
 
 
-# calculate mean light level (low light level could be due to algal overgrowth consider deleting)
-# mean.light<- ddply(Mcap.light.2.melt.meta, c("Shade"), summarise, 
-#                  N    = length(Light[!is.na(Light)]), 
-#                  mean = mean(Light, na.rm=TRUE), 
-#                  sd   = sd(Light, na.rm=TRUE),
-#                  se   = sd / sqrt(N), 
-#                  max = max(Light, na.rm=TRUE) 
-# );mean.light
-
-# subset only >0 values (daylight values)
+# subset only > 0 values (daylight values)
 Mcap.light.2.melt.meta.DAY<-Mcap.light.2.melt.meta %>%
   filter(Light>=1)
 
-#mean across entire experiment
- Mcap.light.2.melt.meta.DAY %>%
-  group_by(Shade) %>%
-  summarise(mean=mean(Light), median=(median(Light)), min=(min(Light)))
+#mean across entire experiment only if we do it this way
+ # Mcap.light.2.melt.meta.DAY %>%
+ #  group_by(Shade) %>%
+ #  summarise(mean=mean(Light), median=(median(Light)), min=(min(Light)))
 
-#summary T0-T1
+#summary stats T0-T1
 Mcap.light.T1 <- Mcap.light.2.melt.meta.DAY %>%
-                        filter(datetime >= as.Date('2017-10-29') & datetime <= as.Date('2017-11-29')) #why not working
+                        filter(datetime >= as.Date('2017-10-29') & datetime <= as.Date('2017-11-29')) 
  Mcap.light.T1 %>%
   group_by(Shade) %>%
   summarise(mean=mean(Light), median=(median(Light)), max=max(Light), min=min(Light))
@@ -242,7 +233,7 @@ Mcap.light.T2 <- Mcap.light.2.melt.meta.DAY %>%
     summarise(mean=mean(max_val))
     T2mean$time.point<-"T2"
 
-#combine
+#combine for ROSS
 Light.by.time<- left_join(T1mean, T2mean, by="Shade")
 ```
 
