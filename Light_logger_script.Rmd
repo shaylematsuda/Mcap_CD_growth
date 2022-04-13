@@ -86,12 +86,11 @@ loggers_wide <- loggers %>%
 # trim out the time frame of the experiment, Oct 29-Jan 8. and remove data during readout times. 
 # subset date time of experiment
 loggers_wide <- loggers_wide %>%
-                        filter(datetime >= as.Date('2017-10-29') & datetime <= as.Date('2018-01-08')) #
+                        filter(datetime >= as.Date('2017-10-29') & datetime <= as.Date('2018-01-07')) #
 
 loggers_wide$date<-date(loggers_wide$datetime) #pull out date
 
 #cut out times when data was pulled from logger, #this removes some of it but not all and not sure why but oh well?
-
   loggers_wide<-loggers_wide%>%
      filter(!(date == '2017-11-01'))%>%
      filter(!(date == '2017-11-18'))%>%
@@ -191,9 +190,9 @@ Mcap.light.2.melt.meta.DAY<-Mcap.light.2.melt.meta %>%
   filter(Light>=1)
 
 #mean across entire experiment only if we do it this way
- # Mcap.light.2.melt.meta.DAY %>%
- #  group_by(Shade) %>%
- #  summarise(mean=mean(Light), median=(median(Light)), min=(min(Light)))
+Mcap.light.2.melt.meta.DAY %>%
+ group_by(Shade) %>%
+ summarise(mean=mean(Light), median=(median(Light)), min=(min(Light)))
 
 #summary stats T0-T1
 Mcap.light.T1 <- Mcap.light.2.melt.meta.DAY %>%
@@ -313,8 +312,21 @@ loggers_wide <- loggers %>%
 # save the wide version of the file to CSV
 #write_csv(loggers_wide,"loggers_wide.csv")
 
-Mcap.temp<-loggers_wide #make a copy
+loggers_wide$date<-date(loggers_wide$datetime)
 
+
+#remove data when loggers pulled (same as light)
+loggers_wide<-loggers_wide%>%
+     filter(!(date == '2017-11-01'))%>%
+     filter(!(date == '2017-11-18'))%>%
+     filter(!(date == '2017-11-29'))%>%
+     filter(!(date == '2017-11-04'))%>%
+     filter(!(date == '2017-11-06'))%>%
+     filter(!(date == '2017-12-07'))%>%
+     filter(!(date == '2017-12-08'))
+
+
+Mcap.temp<-loggers_wide #make a copy
 ##############
 
 logger.df<-read.csv("UROP_logger_locations.csv")
@@ -325,19 +337,22 @@ logger.df<-read.csv("UROP_logger_locations.csv")
 #merge with metadata
 Mcap.temp.meta<-merge(Mcap.temp, logger.df)
 
+library(reshape2)
 #keep cols you need
-Mcap.temp.meta<-Mcap.temp.meta[-c(9)]
+#Mcap.temp.meta<-Mcap.temp.meta[-c(9)] cut?
+
+
+###WORK THIS OUT
 #melt
 Mcap.temp.meta.melt <- melt(Mcap.temp.meta, id = c("datetime","Big.tank","Tank","Temp.logger","Shade"))
 names(Mcap.temp.meta.melt)[6]<-"logger"
 names(Mcap.temp.meta.melt)[7]<-"temp"
 
-
-temp_plot<-ggplot(data=Mcap.temp.meta.melt, aes(x=datetime, y=temp, group = Shade, color=Shade)) +
+temp_plot<-ggplot(data=Mcap.temp.meta.melt, aes(x=datetime, y=temp, group = Big.tank, color=Big.tank)) +
   # geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
   #               width=0.1, show.legend = F)+
   #geom_point(aes(color=Treatment), size=4, show.legend = F)+
-  geom_line(aes(color=Shade), linetype=2, show.legend = F)+
+  geom_line(aes(color=Big.tank), linetype=2, show.legend = F)+
   #scale_color_manual(values=c("dodgerblue3", "darkred"))+
   xlab("") + #Label the X Axis
   #ylim(0, 11) + #set Y limits
@@ -369,7 +384,7 @@ mySummary.temp <- mySummary.temp[,c(1,2,4,6)]
 colnames(mySummary.temp) <- c("Shade", "min", "max", "mean")
 mySummary.temp
 
-#summary T0-T1
+#summary T0-T1   NOT WORKING, not splicing by shade treatment....
 Mcap.temp.T1 <- Mcap.temp.meta.melt %>%
                         filter(datetime >= as.Date('2017-10-29') & datetime <= as.Date('2017-11-29')) #why not working
 mySummary.temp <- data.frame(
@@ -381,9 +396,10 @@ mySummary.temp <- mySummary.temp[,c(1,2,4,6)]
 colnames(mySummary.temp) <- c("Shade", "min", "max", "mean")
 mySummary.temp  
 
-#summary T1-TF
-Mcap.temp.TF <- Mcap.temp.2.melt.meta %>%
-                        filter(datetime >= as.Date('2017-11-30') & datetime <= as.Date('2018-01-08')) #why not working
+#summary T1-TF 
+
+Mcap.temp.TF <- Mcap.temp.meta.melt %>%
+                        filter(datetime >= as.Date('2017-11-30') & datetime <= as.Date('2018-01-07')) #why not working
 mySummary.temp <- data.frame(
 aggregate(temp~Shade, data=Mcap.temp.TF, min),
 aggregate(temp~Shade, data=Mcap.temp.TF, max),
@@ -392,6 +408,29 @@ aggregate(temp~Shade, data=Mcap.temp.TF, mean))
 mySummary.temp <- mySummary.temp[,c(1,2,4,6,8)]
 colnames(mySummary.temp) <- c("Shade", "min", "max", "mean")
 mySummary.temp  
+
+
+
+#try again
+#mean across entire experiment only if we do it this way
+Mcap.temp.meta.melt2<-Mcap.temp.meta.melt #make copy
+Mcap.temp.meta.melt2<-na.omit(Mcap.temp.meta.melt2) #remove NAs
+
+
+
+
+
+Mcap.temp.meta.melt2 %>%
+ group_by(Big.tank) %>%
+ summarise(mean=mean(temp), median=(median(temp)), min=(min(temp)))
+
+#summary stats T0-T1
+Mcap.light.T1 <- Mcap.light.2.melt.meta.DAY %>%
+                        filter(datetime >= as.Date('2017-10-29') & datetime <= as.Date('2017-11-29')) 
+ Mcap.light.T1 %>%
+  group_by(T) %>%
+  summarise(mean=mean(Light), median=(median(Light)), max=max(Light), min=min(Light))
+
 
 ```
 
