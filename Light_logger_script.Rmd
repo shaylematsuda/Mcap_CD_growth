@@ -340,45 +340,48 @@ loggers_wide <- loggers %>%
 
 loggers_wide$date<-date(loggers_wide$datetime)
 
+loggers_wide <- loggers_wide %>%
+                        filter(datetime >= as.Date('2017-10-29') & datetime <= as.Date('2018-01-07')) #exp dates
 
-#remove data when loggers pulled (same as light)
+#remove data when loggers pulled (same as light, confirm)
 loggers_wide<-loggers_wide%>%
      filter(!(date == '2017-11-01'))%>%
      filter(!(date == '2017-11-18'))%>%
      filter(!(date == '2017-11-29'))%>%
      filter(!(date == '2017-11-04'))%>%
      filter(!(date == '2017-11-06'))%>%
+    filter(!(date == '2017-12-04'))%>%
      filter(!(date == '2017-12-07'))%>%
      filter(!(date == '2017-12-08'))
 
+loggers_wide<-select(loggers_wide, -date) #now remove the date col
+
 
 Mcap.temp<-loggers_wide #make a copy
+
 ##############
 
-logger.df<-read.csv("UROP_logger_locations.csv")
-
-#melt the df and then add metadata
-
-
-#merge with metadata
-Mcap.temp.meta<-merge(Mcap.temp, logger.df)
+#you dont need this, no other metadata needed for only 4 loggers
+# logger.df<-read.csv("UROP_logger_locations.csv")
+# logger.df.temp<-select(logger.df, Light.logger, Temp.logger)  #melt the df and then add metadata
+# #merge with metadata
+# Mcap.temp.meta<-merge(Mcap.temp, logger.df)
 
 library(reshape2)
 #keep cols you need
 #Mcap.temp.meta<-Mcap.temp.meta[-c(9)] cut?
 
-
 ###WORK THIS OUT
 #melt
-Mcap.temp.meta.melt <- melt(Mcap.temp.meta, id = c("datetime","Big.tank","Tank","Temp.logger","Shade"))
-names(Mcap.temp.meta.melt)[6]<-"logger"
-names(Mcap.temp.meta.melt)[7]<-"temp"
+Mcap.temp.meta.melt <- melt(Mcap.temp, id = c("datetime"))
+names(Mcap.temp.meta.melt)[2]<-"logger"
+names(Mcap.temp.meta.melt)[3]<-"temp"
 
-temp_plot<-ggplot(data=Mcap.temp.meta.melt, aes(x=datetime, y=temp, group = Big.tank, color=Big.tank)) +
+temp_plot<-ggplot(data=Mcap.temp.meta.melt, aes(x=datetime, y=temp, color=logger)) +
   # geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
   #               width=0.1, show.legend = F)+
   #geom_point(aes(color=Treatment), size=4, show.legend = F)+
-  geom_line(aes(color=Big.tank), linetype=2, show.legend = F)+
+  geom_line(aes(color=logger), linetype=2, show.legend = F)+
   #scale_color_manual(values=c("dodgerblue3", "darkred"))+
   xlab("") + #Label the X Axis
   #ylim(0, 11) + #set Y limits
@@ -400,62 +403,20 @@ temp_plot<-ggplot(data=Mcap.temp.meta.melt, aes(x=datetime, y=temp, group = Big.
   ggtitle("UROP temp")+
   theme(plot.title = element_text(size=20, face = "italic"));temp_plot 
 
-Mcap.temp.meta.melt$temp<-as.numeric(Mcap.temp.meta.melt$temp)
-#Summary across entire experiment
-mySummary.temp <- data.frame(
-aggregate(temp~Shade, data=Mcap.temp.meta.melt, max),
-aggregate(temp~Shade, data=Mcap.temp.meta.melt, mean))
 
-mySummary.temp <- mySummary.temp[,c(1,2,4,6)]
-colnames(mySummary.temp) <- c("Shade", "min", "max", "mean")
-mySummary.temp
+#summary stats
 
-#summary T0-T1   NOT WORKING, not splicing by shade treatment....
+#summary T0-T1
 Mcap.temp.T1 <- Mcap.temp.meta.melt %>%
-                        filter(datetime >= as.Date('2017-10-29') & datetime <= as.Date('2017-11-29')) #why not working
-mySummary.temp <- data.frame(
-aggregate(temp~Shade, data=Mcap.temp.T1, min),
-aggregate(temp~Shade, data=Mcap.temp.T1, max),
-aggregate(temp~Shade, data=Mcap.temp.T1, mean))
+                        filter(datetime >= as.Date('2017-10-29') & datetime <= as.Date('2017-11-29')) #
 
-mySummary.temp <- mySummary.temp[,c(1,2,4,6)]
-colnames(mySummary.temp) <- c("Shade", "min", "max", "mean")
-mySummary.temp  
-
-#summary T1-TF 
-
-Mcap.temp.TF <- Mcap.temp.meta.melt %>%
-                        filter(datetime >= as.Date('2017-11-30') & datetime <= as.Date('2018-01-07')) #why not working
-mySummary.temp <- data.frame(
-aggregate(temp~Shade, data=Mcap.temp.TF, min),
-aggregate(temp~Shade, data=Mcap.temp.TF, max),
-aggregate(temp~Shade, data=Mcap.temp.TF, mean))
-
-mySummary.temp <- mySummary.temp[,c(1,2,4,6,8)]
-colnames(mySummary.temp) <- c("Shade", "min", "max", "mean")
-mySummary.temp  
-
-
-
-#try again
-#mean across entire experiment only if we do it this way
-Mcap.temp.meta.melt2<-Mcap.temp.meta.melt #make copy
-Mcap.temp.meta.melt2<-na.omit(Mcap.temp.meta.melt2) #remove NAs
+Mcap.temp.T1
+#mean of T0-T1
+mySummary.temp.T1 <- mean(Mcap.temp.T1$temp)
 
 
 
 
-
-Mcap.temp.meta.melt2 %>%
- group_by(Big.tank) %>%
- summarise(mean=mean(temp), median=(median(temp)), min=(min(temp)))
-
-#summary stats T0-T1
-Mcap.light.T1 <- Mcap.light.2.melt.meta.DAY %>%
-                        filter(datetime >= as.Date('2017-10-29') & datetime <= as.Date('2017-11-29')) 
- Mcap.light.T1 %>%
-  group_by(T) %>%
-  summarise(mean=mean(Light), median=(median(Light)), max=max(Light), min=min(Light))
 
 
 ```
