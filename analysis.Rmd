@@ -33,8 +33,8 @@ df <- read_csv("all_data_cleaned.csv") %>%
   mutate(depth.m = as.numeric(depth.m),
          across(.cols = c(time.point, genotype, tank, dom, mix,
                           color, frag.id, tank, big.tank, light.level), as.factor)) %>%
-  mutate(light.level = factor(light.level, levels = c("Natural", "Low Shade", "Medium Shade", "High Shade")))
-
+  mutate(light.level = factor(light.level, levels = c("Natural", "Low Shade", "Medium Shade", "High Shade"))) %>%
+  drop_na(light.level)
 ```
 
 # Mortality
@@ -174,6 +174,14 @@ cld(emm)
 
 # Growth
 ```{r}
+# Add mean daily light integrals for light treatment categories
+df <- df %>%
+  mutate(dli = case_when(light.level == "Natural" ~ 3.81,
+                         light.level == "Low Shade" ~ 1.55,
+                         light.level == "Medium Shade" ~ 0.755,
+                         light.level == "High Shade" ~ 0.359))
+  
+
 # Plot buoyant weight data for each frag
 ggplot(df, aes(x = days, y = Dry.Weigh.g, color = dom, group = frag.id)) +
   facet_wrap(~light.level) + 
@@ -182,68 +190,101 @@ ggplot(df, aes(x = days, y = Dry.Weigh.g, color = dom, group = frag.id)) +
 
 # Calculate growth rates
 gr <- df %>%
-  pivot_wider(id_cols = c(frag.id, time.point, genotype, light.level, tank, dom, color),
+  pivot_wider(id_cols = c(frag.id, time.point, genotype, light.level, dli, tank, dom, color),
               names_from = time.point,
               values_from = Dry.Weigh.g) %>%
   # Calculate percent change per day during each time interval
   mutate(grT1 = (T1 - T0)/T0/30 * 100,
          grT2 = (T2 - T1)/T1/30 * 100) %>%
   dplyr::select(-T0, -T1, -T2, T1 = grT1, T2 = grT2) %>%
-  pivot_longer(cols = c(T1, T2), names_to = "time.point", values_to = "growth.rate")
+  pivot_longer(cols = c(T1, T2), names_to = "time.point", values_to = "growth.rate") %>%
+  drop_na(growth.rate)
 
 ##############################################
 
 # Plot growth rates by predictors
 ggplot(gr, aes(x = light.level, y = growth.rate)) +
-  geom_boxplot() +
+  geom_jitter() +
   facet_grid(time.point ~ dom)
 
 # Fit model to find outliers based on growth rate residuals
 grmod <- lmer(growth.rate ~ dom * light.level * time.point + (1|genotype) + (1|frag.id) + (1|tank), data = gr)
 grres <- augment(grmod)
-ggplot(grres, aes(x = .resid, fill = .cooksd > 0.1)) + geom_histogram(bins = 50)
+ggplot(grres, aes(x = light.level, y = growth.rate)) +
+  geom_jitter(aes(color = .cooksd < 0.1)) +
+  facet_grid(time.point ~ dom)
 
 # Filter out observations with cooks distance > 0.1
-grres.f <- grres %>% filter(.cooksd < 0.1)
+grres.f <- grres %>% filter(.cooksd < 0.1) %>%
+  left_join(gr)
 nrow(grres) - nrow(grres.f)   # Filtered out 6 observations
 
 
 ##############################################
 
-# FILTER dataset even more by mortality scores
+# Run stats
+mod <- lmer(growth.rate ~ dom * dli * time.point + (1|genotype/frag.id) + (1|tank), data = grres.f)
+Anova(mod)
+hist(resid(mod))
+# 3-way interaction is not significant
 
+# Get model outputs
+emm <- emmeans(mod, ~ dom*dli|time.point, at = list(dli = sort(unique(df$dli))))
+rbind(contrast(emm, method = "pairwise", by = c("dli", "time.point")), adjust = "fdr")
+
+
+# Get fitted values to plot
+pred <- expand(grres.f, dom, time.point, dli = seq(0.359, 3.81, len = 101))
+pred$fit <- predict(mod, pred, re.form = NA)
+bootfit <- bootMer(mod, nsim = 999, FUN = function(x) predict(x, pred, re.form = NA))
+pred$lci <- apply(bootfit$t, 2, quantile, 0.05)
+pred$uci <- apply(bootfit$t, 2, quantile, 0.95)
+
+# Plot
+ggplot(pred, aes(x = dli, y = fit, color = dom)) +
+  facet_wrap(~ time.point) +
+  geom_jitter(data = left_join(grres.f, df), aes(y = growth.rate, shape = mortality >= 20), alpha = 0.5) +
+  geom_line() +
+  geom_ribbon(aes(ymin = lci, ymax = uci), alpha = 0.2, lwd = 0) +
+  scale_shape_manual(values = c(20, 4))
+
+#################################
+
+# Visualize partial mortality
 grres.f %>% 
   left_join(df) %>%
-  ggplot(aes(x = light.level, y = growth.rate)) +
-  geom_boxplot() +
-  geom_jitter(aes(color = mortality <= 20), alpha = 0.7) +
-  facet_grid(time.point ~ dom) +
-  ylim(-0.1, 0.5)
+  ggplot(aes(x = dli, y = growth.rate)) +
+  geom_jitter(aes(shape = mortality <= 20, color = mortality <= 20), alpha = 0.5) +
+  scale_shape_manual(values = c(4, 18)) +
+  facet_grid(time.point ~ dom)
 
 
-# Run stats on MORTALITY-FILTERED dataset
+# Make a MORTALITY-FILTERED dataset
 grres.ff <- grres.f %>%
   left_join(df) %>%
   filter(mortality <= 0 & !is.na(mortality))
   
-mod <- lmer(growth.rate ~ dom * light.level * time.point + (1|genotype/frag.id) + (1|tank), data = grres.ff)
-Anova(mod)
-# 3-way interaction is not significant
-emm <- emmeans(mod, ~ dom*light.level|time.point)
-rbind(contrast(emm, method = "pairwise", by = c("light.level", "time.point")), adjust = "fdr")
-# but multiple testing shows C > D at T2, but not at T1...
-rbind(contrast(emm, method = "pairwise", by = c("dom", "light.level")), adjust = "fdr")
-emm
-# both C and D grow twice as fast at T2 compared to T1.
-# C grows 40% faster than D at T1, and 38% faster than D at T2...
+#############################################
+```
 
-# Plot
-data.frame(emm) %>%
-  ggplot(aes(x = light.level, y = emmean, color = dom)) +
-  facet_wrap(~time.point) +
-  geom_point(position = position_dodge(width  = 0.5)) +
-  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL),
-                position = position_dodge(width  = 0.5))
+# model actual weights over time
+```{r}
+mod <- lmer(log(Dry.Weigh.g) ~ dom * dli * days + (1|genotype/frag.id), data = df)
+anova(mod)
+hist(resid(mod))
+
+emt <- emtrends(mod, specs = c("dom", "dli"), var = "days", at = list(dli = sort(unique(df$dli))))
+contrast(emt, method = "pairwise", by = "dli")
+
+data.frame(emt) %>%
+  ggplot(aes(x = dli, y = days.trend, color = dom)) +
+  #geom_point() +
+  geom_line() #+
+  # geom_errorbar(aes(ymin = days.trend - SE, ymax = days.trend + SE), width = 0.1)
+```
+
+
+```{r old}
 
 
 #  Could also fit separate models by timepoint
