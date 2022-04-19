@@ -270,6 +270,30 @@ emmeans(mod, ~ dom*light.level)
 ```
 
 ```{r}
+# use average DLI as predictor
+grres.f <- grres.f %>%
+  mutate(dli = case_when(light.level == "Natural" ~ 3.81,
+                         light.level == "Low Shade" ~ 1.55,
+                         light.level == "Medium Shade" ~ 0.755,
+                         light.level == "High Shade" ~ 0.359))
+
+grres.f %>% distinct(dli)
+
+ggplot(grres.ff, aes(x = dli, y = growth.rate, color = dom)) +
+  geom_point() +
+  facet_wrap(~ time.point) +
+  geom_smooth(method = "lm")
+
+
+
+mod <- lmer(growth.rate ~ dom * dli * time.point + (1|genotype/frag.id) + (1|tank), data = grres.f)
+Anova(mod)
+# 3-way interaction is not significant
+emm <- emmeans(mod, ~ dom*dli|time.point, at = list(dli = c(0,1,4)))
+rbind(contrast(emm, method = "pairwise", by = c("dli", "time.point")), adjust = "fdr")
+```
+
+```{r}
 # separate brown C and orange C
 mod <- lmer(growth.rate ~ color*dom * light.level * time.point + (1|genotype) + (1|frag.id) + (1|tank), 
             data = left_join(grres.ff, df))
