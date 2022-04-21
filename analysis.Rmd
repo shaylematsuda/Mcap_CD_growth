@@ -113,9 +113,6 @@ anova(mod)
   
   mortres <- augment(mod)
     ggplot(mortres, aes(x = .resid, fill = .cooksd > 0.1)) + geom_histogram(bins = 50) 
-<<<<<<< HEAD
-            #do we get rid of the 5 samples identified here? 
-=======
             #do we get rid of the handful of samples?
     
   # plot with cooks color
