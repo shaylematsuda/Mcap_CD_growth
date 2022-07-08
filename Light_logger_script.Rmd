@@ -414,8 +414,10 @@ Mcap.temp.T1
 #mean of T0-T1
 mySummary.temp.T1 <- mean(Mcap.temp.T1$temp)
 
+Mcap.temp.T1.wide<-pivot_wider(Mcap.temp.T1, names_from = logger, values_from=temp)
 
-
+Mcap.temp.T1.wide %>% 
+mutate(mean = rowMeans(across(where(is.numeric))))
 
 
 
