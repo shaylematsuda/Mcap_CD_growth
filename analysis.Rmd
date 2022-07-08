@@ -70,10 +70,6 @@ df.mort %>%
 
 # boxplot C v D:facet by shade treatment #####
 
-df.mort %>%
-  group_by(dom, light.level, time.point) %>%
-  summarize(mean = mean(mortality, na.rm = T)) %>%
-  ggplot(aes(x = ))
 
 # box plot
 ggplot(df.mort, aes(x = time.point, y = mortality, color = dom)) +
@@ -89,19 +85,16 @@ ggplot(df.mort, aes(x = interaction(dom,time.point), y = mortality, color = dom)
 
 # boxplot C v D:facet by shade time #####
   
-# individual points
-ggplot(df.mort, aes(x = interaction(dom,shade.levels), y = mortality, color = dom)) +
-  facet_wrap(~time.point, 1) + 
-   theme_classic()+
-    geom_jitter()+
-    scale_y_continuous(breaks=1:6)
-
 # models ####
 #new as of 2.16.22 with percent not factor
 
 # lmer
 mod<-lmer(mortality ~ dom  *light.level * time.point + (1|frag.id) + (1|genotype) + (1|tank), data = df.mort)
 anova(mod)
+
+# mod<-glm(mortality/100 ~ dom  *light.level * time.point, data = df.mort, family = "quasibinomial")
+# Anova(mod)
+
 
 hist(residuals(mod)) #normal
 shapiro.test(residuals(mod))  #p-value < 2.2e-16
@@ -112,7 +105,11 @@ qqPlot(residuals(mod)) #not normal
 #log
 df.mort$mortality_log<-log10(1+df.mort$mortality)
 df.mort$mortality_asin<-asin(sqrt(df.mort$mortality/100))
-mod<-lmer(mortality_asin ~ dom * light.level * time.point + (1|frag.id) + (1|genotype) + (1|tank), data = df.mort)
+df.mort$mortality_logit <- log(((df.mort$mortality/100)+0.001)/(1-((df.mort$mortality/100)+0.001)))
+plot(df.mort$mortality_logit)
+plot(df.mort$mortality_log)
+plot(df.mort$mortality)
+mod<-lmer(mortality_logit ~ dom * light.level * time.point + (1|frag.id) + (1|genotype) + (1|tank), data = df.mort)
 anova(mod)
   hist(residuals(mod)) #normal
   shapiro.test(residuals(mod))  #p-value 3.483e-10
@@ -129,28 +126,7 @@ anova(mod)
     geom_jitter()+
     scale_y_continuous(breaks=1:6)
   
->>>>>>> 239a52bad061996a0674bf8cf3d87f1ec8c7c29e
   
-  # Filter out observations with cooks distance > 0.1
-mortres.f <- mortres %>% filter(.cooksd < 0.1)
-nrow(mortres) - nrow(mortres.f)   # Filtered out 6 observations
-
-# Plot FILTERED growth rates by predictors
-ggplot(mortres.f, aes(x = light.level, y = mortality_log)) + #ross plot
-  geom_boxplot() +
-  geom_jitter() +
-  facet_grid(time.point ~ dom)
-
-  #not sure if needed...on log scale
-ggplot(mortres.f, aes(x = interaction(dom,time.point), y = mortality_log, color = dom)) +
-  facet_wrap(~light.level, 1) + 
-   theme_classic()+
-    geom_jitter()+
-    scale_y_continuous(breaks=1:6)
-
-# Refit model with filtered dataset: NOW ALL IS SIGNIFICANT
-mod<-lmer(mortality_log ~ dom * light.level * time.point + (1|frag.id) + (1|genotype) + (1|tank), data = mortres.f)
-anova(mod)
 
 emm <- emmeans(mod, ~ dom*light.level|time.point)
 rbind(contrast(emm, method = "pairwise", by = "light.level"), adjust = "fdr")
