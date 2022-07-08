@@ -35,6 +35,13 @@ df <- read_csv("all_data_cleaned.csv") %>%
                           color, frag.id, tank, big.tank, light.level), as.factor)) %>%
   mutate(light.level = factor(light.level, levels = c("Natural", "Low Shade", "Medium Shade", "High Shade"))) %>%
   drop_na(light.level)
+
+# Filter out a few fragments where symbiont identity is ambiguous, e.g., 867B and 922 where the colony was categorized as D based on the majority of frags from that colony, but individual fragments weree 100%C
+mislabeled_D <- df %>%
+  filter(dom == "D", propD < 0.5)
+
+df <- df %>%
+  anti_join(mislabeled_D)
 ```
 
 # Mortality
@@ -226,7 +233,11 @@ nrow(grres) - nrow(grres.f)   # Filtered out 6 observations
 mod <- lmer(growth.rate ~ dom * dli * time.point + (1|genotype/frag.id) + (1|tank), data = grres.f)
 Anova(mod)
 hist(resid(mod))
+ggplot(augment(mod), aes(x = dli, y = .resid)) +
+  geom_point()
+#heteroskedasticity?
 # 3-way interaction is not significant
+##2022-07-08  - after filtering out fake D frags, the threeway is significant.
 
 # Get model outputs
 emm <- emmeans(mod, ~ dom*dli|time.point, at = list(dli = sort(unique(df$dli))))
@@ -243,10 +254,19 @@ pred$uci <- apply(bootfit$t, 2, quantile, 0.95)
 # Plot
 ggplot(pred, aes(x = dli, y = fit, color = dom)) +
   facet_wrap(~ time.point) +
-  geom_jitter(data = left_join(grres.f, df), aes(y = growth.rate, shape = mortality >= 20), alpha = 0.5) +
+  #geom_jitter(data = left_join(grres.f, df), aes(y = growth.rate, shape = mortality >= 20), alpha = 0.5) +
+  #geom_jitter(data = left_join(grres.f, df), aes(y = growth.rate, shape = propD >= 0.2), alpha = 0.5) +
+  geom_violin(data = left_join(grres.f, df), aes(y = growth.rate, group = interaction(dom, dli)),
+              scale = "width") +
   geom_line() +
   geom_ribbon(aes(ymin = lci, ymax = uci), alpha = 0.2, lwd = 0) +
-  scale_shape_manual(values = c(20, 4))
+  scale_shape_manual(values = c(20, 4)) +
+  coord_cartesian(ylim = c(-0.06, 0.5))
+
+left_join(grres.f, df) %>%
+  filter(time.point == "T2", light.level == "Natural", dom == "D") %>%
+  select(growth.rate, dom, light.level, time.point, genotype, frag.id, growth.rate, propD) %>%
+  arrange(-growth.rate)
 
 #################################
 

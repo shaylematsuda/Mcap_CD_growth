@@ -223,6 +223,7 @@ df %>%
 # screening biopsy for '867' was D... but was this same colony as 867B?
 # If going with T0 data, could label this as a D colony, but weird that T2 samples were both C....shuffling?
 # Call this a D colony, but if outlier/weird, probly throw away...
+### this 867B at T2 high light had  the highest  growth rate of  all "D" colonies...since  this is an outlier, best to filter out this data point. it probably really was C, and was tagged as wrong genotype. 
 
 # Genotype 868 = frags 109, 110, 111, 112
 # all have pretty even mixtures but all C-dom except 112@T0 was D-dom.... but only 58% D. qPCR data looks good.
