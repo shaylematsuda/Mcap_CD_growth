@@ -299,7 +299,7 @@ mort2<-mort2 %>%
 
 mort2<-pivot_longer(mort2, cols = c(T1, T2), names_to = "time.point", values_to = "mortality")
 
-df <- full_join(df, mort2) # we are missing some values
+df <- full_join(df, mort2) # we are missing some values. 
 df <- df %>%
   mutate(mortality = if_else(time.point == "T0", 0, mortality)) # mortality at T0 is 0
 
@@ -311,28 +311,28 @@ df %>%
   filter(any(is.na(mortality))) %>%
   arrange(frag.id, time.point)
 ```
-# Color
+# Color - cut?
 ```{r}
-color <- read_csv("color.score.csv") %>%
-  rename(genotype = "Colony #") %>%
-  select(-7) %>%
-  pivot_longer(2:6, names_to = "obs") %>%
-  group_by(genotype) %>%
-  drop_na(value) %>%
-  count(orange = (value == "O")) %>%
-  mutate(conf = n/sum(n),
-         color = if_else(orange, "orange", "brown")) %>%
-  filter(conf == max(conf)) %>%
-  select(genotype, color, conf) %>%
-  mutate(genotype = factor(genotype))
-  
-df <- full_join(df, color)
-
-# some genotypes have no color associated with them
-df %>%
-  filter(is.na(color)) %>%
-  distinct(genotype) %>%
-  arrange(genotype)
+# color <- read_csv("color.score.csv") %>%
+#   rename(genotype = "Colony #") %>%
+#   select(-7) %>%
+#   pivot_longer(2:6, names_to = "obs") %>%
+#   group_by(genotype) %>%
+#   drop_na(value) %>%
+#   count(orange = (value == "O")) %>%
+#   mutate(conf = n/sum(n),
+#          color = if_else(orange, "orange", "brown")) %>%
+#   filter(conf == max(conf)) %>%
+#   select(genotype, color, conf) %>%
+#   mutate(genotype = factor(genotype))
+#   
+# df <- full_join(df, color)
+# 
+# # some genotypes have no color associated with them
+# df %>%
+#   filter(is.na(color)) %>%
+#   distinct(genotype) %>%
+#   arrange(genotype)
 ```
 
 ```{r}
@@ -352,8 +352,9 @@ df <- df %>%
 # Fill in missing metadata for a couple of frags at  T2
 df  <- df %>% 
   group_by(frag.id) %>%
-  fill(genotype, light.level, big.tank, tank, depth.m, dom, color) %>%
+  fill(genotype, light.level, big.tank, tank, depth.m, dom, color, treatment) %>%
   ungroup()
+
 ```
 
 

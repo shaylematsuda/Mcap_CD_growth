@@ -47,14 +47,75 @@ df <- df %>%
 # Mortality
 ```{r}
 df.mort<-df #make a copy
-df.mort<-df.mort%>%
-  drop_na(mortality) %>% #drop one col of NA in mort
-  drop_na(light.level) %>%
-  drop_na(days) 
+df.mort$time.point<-as.factor(df.mort$time.point)
+df.mort$big.tank<-as.factor(df.mort$big.tank)
+df.mort$tank<-as.factor(df.mort$tank)
+df.mort$treatment<-as.factor(df.mort$treatment)
+df.mort$dom<-as.factor(df.mort$dom)
 
-#drop the UNKNOWN light levels
 
-#write.csv(df.mort,"dfmort.csv")
+# df.mort<-df.mort%>%      #NO LONGER ANY MISSING LIGHT OR TIMES
+#   drop_na(light.level) %>% #drop the UNKNOWN light levels
+#   drop_na(time.point) 
+
+#write.csv(df.mort,"dfmort_20220711.csv")
+
+# if missing T0 data add back in with metadata
+ df.mort<-df.mort %>%
+   add_row(frag.id="134", days=0, time.point="T0",treatment="Zero", light.level="Natural", genotype="878", big.tank="16", tank="9", depth.m=2.4, dom ="D", mortality=0)%>%
+    add_row(frag.id="135", days=0, time.point="T0",treatment="One", light.level="Low Shade", genotype="878", big.tank="13", tank="2", depth.m=2.4, dom ="D", mortality=0)%>%
+    add_row(frag.id="137", days=0, time.point="T0",treatment="Three", light.level="High Shade", genotype="878", big.tank="17", tank="16", depth.m=2.4, dom ="D", mortality=0)%>%
+    add_row(frag.id="195", days=0, time.point="T0",treatment="One", light.level="Low Shade", genotype="858", big.tank="13", tank="2", depth.m=2.4, dom ="C", mortality=0)
+ 
+ #If days has NA, change to dates based on condition of time.point (T1 or T2)
+df.mort<-
+  df.mort %>%
+  mutate(days = case_when(
+    is.na(days) & time.point == "T2" ~ 60,
+    is.na(days) & time.point == "T1" ~ 31,
+    TRUE ~ days
+  ))
+
+# add meta to T0s without it
+ #If days has NA, change to dates based on condition of time.point (T1 or T2)
+df.mort<-
+  df.mort %>%
+  mutate(treatment = case_when(
+    is.na(treatment) & frag.id == 276 & time.point=="T2" ~ "Three",
+    is.na(treatment) & frag.id == 2 & time.point=="T2" ~ "Zero",
+    is.na(treatment) & frag.id == 25 & time.point=="T2" ~ "Three",
+    is.na(treatment) & frag.id == 25 & time.point=="T1" ~ "Three",
+    TRUE ~ treatment)) %>%
+      mutate(light.level = case_when(
+    is.na(light.level) & frag.id == 276 & time.point=="T2" ~ "High Shade",
+    is.na(light.level) & frag.id == 2 & time.point=="T2" ~ "Natural",
+    is.na(light.level) & frag.id == 25 & time.point=="T2" ~ "High Shade",
+    is.na(light.level) & frag.id == 25 & time.point=="T1" ~ "High Shade",
+    TRUE ~ light.level)) %>%
+   mutate(genotype = case_when(
+    is.na(genotype) & frag.id == 276 & time.point=="T2" ~ "900",
+    is.na(genotype) & frag.id == 2 & time.point=="T2" ~ "852",
+    is.na(genotype) & frag.id == 25 & time.point=="T2" ~ "880",
+    is.na(genotype) & frag.id == 25 & time.point=="T1" ~ "880",
+    TRUE ~ genotype))%>%
+   mutate(big.tank = case_when(
+    is.na(big.tank) & frag.id == 276 & time.point=="T2" ~ "13",
+    is.na(big.tank) & frag.id == 2 & time.point=="T2" ~ "16",
+    is.na(big.tank) & frag.id == 25 & time.point=="T2" ~ "14",
+    is.na(big.tank) & frag.id == 25 & time.point=="T1" ~ "14",
+    TRUE ~ big.tank))%>%
+   mutate(tank = case_when(
+    is.na(tank) & frag.id == 276 & time.point=="T2" ~ "3",
+    is.na(tank) & frag.id == 2 & time.point=="T2" ~ "9",
+    is.na(tank) & frag.id == 25 & time.point=="T2" ~ "7",
+    is.na(tank) & frag.id == 25 & time.point=="T1" ~ "7",
+    TRUE ~ tank))%>%
+   mutate(dom = case_when(
+    is.na(dom) & frag.id == 276 & time.point=="T2" ~ "C",
+    is.na(dom) & frag.id == 2 & time.point=="T2" ~ "D",
+    is.na(dom) & frag.id == 25 & time.point=="T2" ~ "D",
+    is.na(dom) & frag.id == 25 & time.point=="T1" ~ "D",
+    TRUE ~ dom))
 
 #plot
   ggplot(df.mort, aes(x = days, y = mortality, color = dom, group = frag.id)) +  # look at mort/time
@@ -62,14 +123,30 @@ df.mort<-df.mort%>%
     geom_line()
 
 df.mort %>%
-  pivot_wider(id_cols = c(frag.id, time.point, genotype, light.level, dom, color),
+  pivot_wider(id_cols = c(frag.id, genotype, light.level, dom, time.point),
               names_from = time.point,
               values_from = mortality) %>%
   filter(T2 < T1)
-# RC: Why are there still 3 frags that are less dead at T2?
+# 20220711 missing values: 
+
+#T1s=0 or 10 but no T2, can't do anything, can't assume
+# Frag 20 T1 =0. no T2
+# frag 24 T1 =0 no T2
+#frag 51 T1=0, no T2
+#frag 70 T1=0, no T2
+# frag 110 T1=0 no t2
+#frag 111 t1=0,no t2
+# frag 49 T1=10, no T2
+# frag 109 T1=10, no  T2
+
+#Add missing T0s above
+#frag 134 no t0
+#fag 135 no t0
+#Frag 137 no t0
+# frag 195 no t0
 
 # boxplot C v D:facet by shade treatment #####
-
+df.mort$light.level <- factor(df.mort$light.level, levels=c("Natural", "Low Shade", "Medium Shade", "High Shade")) #reorder factors
 
 # box plot
 ggplot(df.mort, aes(x = time.point, y = mortality, color = dom)) +
@@ -81,7 +158,10 @@ ggplot(df.mort, aes(x = time.point, y = mortality, color = dom)) +
 ggplot(df.mort, aes(x = interaction(dom,time.point), y = mortality, color = dom)) +
   facet_wrap(~light.level, 1) + 
    theme_classic()+
-    geom_jitter()
+    geom_jitter()+
+    geom_boxplot(outlier.shape = NA) 
+
+
 
 # boxplot C v D:facet by shade time #####
   
