@@ -71,14 +71,14 @@ loggers <- map_dfr(csv_files,function(csv) {
       ) %>%
       # select just lets us pull out specific columns
       # these are the ones we want
-      select(logger, datetime, raw, calibrated)
+      dplyr::select(logger, datetime, raw, calibrated)   # *******july 13 2022 the select() function is throwing errors w/o dplyr call ******
   )
   
 })
 
 # make wide
 loggers_wide <- loggers %>%
-  select(-raw) %>% # get rid of the raw column
+  dplyr::select(-raw) %>% # get rid of the raw column
   pivot_wider(names_from="logger",values_from="calibrated") %>%
   arrange(datetime)
 
@@ -101,10 +101,10 @@ loggers_wide$date<-date(loggers_wide$datetime) #pull out date
      filter(!(date == '2017-12-08'))
 
 # save the wide version of the file to CSV
-#write_csv(loggers_wide,"loggers_wide.csv")
+#write_csv(loggers_wide,"loggers_wide_20220713.csv")
 
 #REMOVE LOGGER 6377 UNLESS YOU LOCATE CALIBRATION FILE
-loggers_wide = subset(loggers_wide, select = -c(logger_6377) )
+loggers_wide = subset(light_loggers_wide, select = -c(logger_6377) )
 
 
 Mcap.light<-loggers_wide #make a copy
@@ -184,6 +184,33 @@ light_plot<-ggplot(data=Mcap.light.2.melt.meta, aes(x=datetime, y=Light, group =
 
 light_plot+facet_wrap(~Shade)
 light_plot + xlim(as_datetime("2017-11-30"),  as_datetime("2017-12-01"))
+
+
+light_plot<-ggplot(data=Mcap.light.2.melt.meta, aes(x=datetime, y=Light, group = Shade, color=Shade)) +
+  # geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+  #               width=0.1, show.legend = F)+
+  #geom_point(aes(color=Treatment), size=4, show.legend = F)+
+  geom_smooth(aes(color=Shade), linetype=2, show.legend = T)+
+  #scale_color_manual(values=c("dodgerblue3", "darkred"))+
+  xlab("") + #Label the X Axis
+  #ylim(0, 11) + #set Y limits
+  #scale_y_log10()+
+  theme_bw() + #Set the ITSkground color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot ITSkground
+        legend.key = element_blank()) + #Set plot legend key
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(),
+        panel.background = element_rect(colour = "black", size=1))+
+  theme(aspect.ratio=1)+
+  ylab(expression(paste("Light"))) +
+  ggtitle("UROP light")+
+  theme(plot.title = element_text(size=20, face = "italic"));light_plot
 ```
 
 
@@ -263,8 +290,8 @@ Light.by.time<- left_join(T1mean, T2mean, by="Shade")
 ```
 
 
-Temperature Loggers
-
+#Temperature Loggers
+If code is glitching, clean the environment and it will run
 ```{r}
 
 
@@ -321,7 +348,7 @@ loggers <- map_dfr(csv_files,function(csv) {
       ) %>%
       # select just lets us pull out specific columns
       # these are the ones we want
-      select(logger, datetime, Temp)
+      dplyr::select(logger, datetime, Temp)
   )
   
 })
@@ -336,7 +363,7 @@ loggers_wide <- loggers %>%
   arrange(datetime)
 
 # save the wide version of the file to CSV
-#write_csv(loggers_wide,"loggers_wide.csv")
+#write_csv(loggers_wide,"temploggers_wide_20220713.csv")
 
 loggers_wide$date<-date(loggers_wide$datetime)
 
@@ -354,7 +381,7 @@ loggers_wide<-loggers_wide%>%
      filter(!(date == '2017-12-07'))%>%
      filter(!(date == '2017-12-08'))
 
-loggers_wide<-select(loggers_wide, -date) #now remove the date col
+loggers_wide<-dplyr::select(loggers_wide, -date) #now remove the date col
 
 
 Mcap.temp<-loggers_wide #make a copy
@@ -404,22 +431,52 @@ temp_plot<-ggplot(data=Mcap.temp.meta.melt, aes(x=datetime, y=temp, color=logger
   theme(plot.title = element_text(size=20, face = "italic"));temp_plot 
 
 
+temp_plot<-ggplot(data=Mcap.temp.meta.melt, aes(x=datetime, y=temp, color=logger)) +
+  # geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+  #               width=0.1, show.legend = F)+
+  #geom_point(aes(color=Treatment), size=4, show.legend = F)+
+  geom_line(aes(color=logger), linetype=2, show.legend = F)+
+  #scale_color_manual(values=c("dodgerblue3", "darkred"))+
+  xlab("") + #Label the X Axis
+  #ylim(0, 11) + #set Y limits
+  #scale_y_log10()+
+  theme_bw() + #Set the ITSkground color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(),
+        panel.background = element_rect(colour = "black", size=1))+
+  theme(aspect.ratio=1)+
+  ylab(expression(paste("temp"))) +
+  ggtitle("UROP temp")+
+  theme(plot.title = element_text(size=20, face = "italic"));temp_plot 
+
+
 #summary stats
 
 #summary T0-T1
 Mcap.temp.T1 <- Mcap.temp.meta.melt %>%
                         filter(datetime >= as.Date('2017-10-29') & datetime <= as.Date('2017-11-29')) #
 
-Mcap.temp.T1
 #mean of T0-T1
-mySummary.temp.T1 <- mean(Mcap.temp.T1$temp)
+Mcap.temp.T1 %>%
+  group_by(logger) %>%                                          # group by shade treatment
+  summarise(meantemp = mean(temp, na.rm=T), sd=sd(temp, na.rm=T))  
 
-Mcap.temp.T1.wide<-pivot_wider(Mcap.temp.T1, names_from = logger, values_from=temp)
+#summary T1-T2
+Mcap.temp.T2 <- Mcap.temp.meta.melt %>%
+                        filter(datetime >= as.Date('2017-11-29') & datetime <= as.Date('2018-01-07')) #
 
-Mcap.temp.T1.wide %>% 
-mutate(mean = rowMeans(across(where(is.numeric))))
-
-
+#mean of T1-T2
+Mcap.temp.T2 %>%
+  group_by(logger) %>%                                          # group by shade treatment
+  summarise(meantemp = mean(temp, na.rm=T), sd=sd(temp, na.rm=T))  
 
 ```
 
