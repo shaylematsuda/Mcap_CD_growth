@@ -64,12 +64,11 @@ df.mort$dom<-as.factor(df.mort$dom)
     geom_line()
 
 df.mort %>%
-  pivot_wider(id_cols = c(frag.id, genotype, light.level, dom, time.point),
+  pivot_wider(id_cols = c(frag.id, genotype, light.level, dom, time.point), ### ROSS getting "time point doesn't exist" errorrrrr whyyyy
               names_from = time.point,
               values_from = mortality) %>%
   filter(T2 < T1)
 # 20220711 missing values: 
-
 #T1s=0 or 10 but no T2, can't do anything, can't assume
 # Frag 20 T1 =0. no T2
 # frag 24 T1 =0 no T2
@@ -79,12 +78,6 @@ df.mort %>%
 #frag 111 t1=0,no t2
 # frag 49 T1=10, no T2
 # frag 109 T1=10, no  T2
-
-#Add missing T0s above
-#frag 134 no t0
-#fag 135 no t0
-#Frag 137 no t0
-# frag 195 no t0
 
 # boxplot C v D:facet by shade treatment #####
 df.mort$light.level <- factor(df.mort$light.level, levels=c("Natural", "Low Shade", "Medium Shade", "High Shade")) #reorder factors
@@ -96,28 +89,40 @@ ggplot(df.mort, aes(x = time.point, y = mortality, color = dom, fill=dom)) +
    theme_classic()+
     geom_boxplot()
 
-
-# individual points
-ggplot(df.mort, aes(x = interaction(dom,time.point), y = mortality, color = dom)) +
+# box plot with no T0
+df.mort.noT0<-subset(df.mort, time.point=="T1"|time.point=="T2")
+ggplot(df.mort.noT0, aes(x = time.point, y = mortality, color = dom, fill=dom)) +
   facet_wrap(~light.level, 1) + 
    theme_classic()+
-    geom_jitter()+
-    geom_boxplot(outlier.shape = NA) 
+    geom_boxplot()
 
-
-
-# boxplot C v D:facet by shade time #####
-  
+```
+Mortality models
+```{r}
 # models ####
 #new as of 2.16.22 with percent not factor
-
 # lmer
+#all time points
+set.seed(30)
 mod<-lmer(mortality ~ dom  *light.level * time.point + (1|frag.id) + (1|genotype) + (1|tank), data = df.mort)
+anova(mod)
+
+emm <- emmeans(mod, ~ dom*light.level|time.point)
+rbind(contrast(emm, method = "pairwise", by = "light.level"), adjust = "fdr")
+# mod<-glm(mortality/100 ~ dom  *light.level * time.point, data = df.mort, family = "quasibinomial")
+# Anova(mod)
+
+hist(residuals(mod)) #normal
+shapiro.test(residuals(mod))  #p-value < 2.2e-16
+qqPlot(residuals(mod)) #not normal
+
+#Just T1 and T2
+set.seed(30)
+mod<-lmer(mortality ~ dom  *light.level * time.point + (1|frag.id) + (1|genotype) + (1|tank), data = df.mort.noT0)
 anova(mod)
 
 # mod<-glm(mortality/100 ~ dom  *light.level * time.point, data = df.mort, family = "quasibinomial")
 # Anova(mod)
-
 
 hist(residuals(mod)) #normal
 shapiro.test(residuals(mod))  #p-value < 2.2e-16
@@ -138,16 +143,16 @@ anova(mod)
   shapiro.test(residuals(mod))  #p-value 3.483e-10
   qqPlot(residuals(mod)) # residuals look better, not great but I think ok
   
-  mortres <- augment(mod)
-    ggplot(mortres, aes(x = .resid, fill = .cooksd > 0.1)) + geom_histogram(bins = 50) 
-            #do we get rid of the handful of samples?
+  # mortres <- augment(mod)
+  #   ggplot(mortres, aes(x = .resid, fill = .cooksd > 0.1)) + geom_histogram(bins = 50) 
+  #           #do we get rid of the handful of samples?
     
   # plot with cooks color
-    ggplot(mortres, aes(x = interaction(dom,time.point), y = mortality_asin, color = .cooksd > 0.1)) +
-  facet_wrap(~light.level, 1) + 
-   theme_classic()+
-    geom_jitter()+
-    scale_y_continuous(breaks=1:6)
+  #   ggplot(mortres, aes(x = interaction(dom,time.point), y = mortality_log, color = .cooksd > 0.1)) +
+  # facet_wrap(~light.level, 1) + 
+  #  theme_classic()+
+  #   geom_jitter()+
+  #   scale_y_continuous(breaks=1:6)
   
   
 
@@ -192,16 +197,33 @@ ggplot(df, aes(x = days, y = Dry.Weigh.g, color = dom, group = frag.id)) +
 # There are clearly some outlier values of weight to double check....checked them and only one was off.updated 2.1.22 SM
 
 # Calculate growth rates
-gr <- df %>%
-  pivot_wider(id_cols = c(frag.id, time.point, genotype, light.level, dli, tank, dom, color),
-              names_from = time.point,
+gr<-df # make a copy
+
+#remove cols not needed
+gr<-dplyr::select(gr, -c("days","notes","mix", "propD","mortality")) # cut cols here bc not running in tidyverse below for some unknown reason...20220713
+
+gr<-gr %>%
+  pivot_wider( names_from = time.point,
               values_from = Dry.Weigh.g) %>%
-  # Calculate percent change per day during each time interval
+ # Calculate percent change per day during each time interval
   mutate(grT1 = (T1 - T0)/T0/30 * 100,
          grT2 = (T2 - T1)/T1/30 * 100) %>%
   dplyr::select(-T0, -T1, -T2, T1 = grT1, T2 = grT2) %>%
   pivot_longer(cols = c(T1, T2), names_to = "time.point", values_to = "growth.rate") %>%
   drop_na(growth.rate)
+
+  #this isn't running, it's the id_cols part of the function calling an error on time.point. i fix above by removing the unused columns so the package can assume what to do (we can remove id_cols() which is causing the error). original code below:
+
+# gr <- df %>%
+#   pivot_wider(id_cols = c(frag.id, time.point, genotype, light.level, dli, tank, dom),
+#               names_from = time.point,
+#               values_from = Dry.Weigh.g) %>%
+#   # Calculate percent change per day during each time interval
+#   mutate(grT1 = (T1 - T0)/T0/30 * 100,
+#          grT2 = (T2 - T1)/T1/30 * 100) %>%
+#   dplyr::select(-T0, -T1, -T2, T1 = grT1, T2 = grT2) %>%
+#   pivot_longer(cols = c(T1, T2), names_to = "time.point", values_to = "growth.rate") %>%
+#   drop_na(growth.rate)
 
 ##############################################
 
@@ -226,11 +248,14 @@ nrow(grres) - nrow(grres.f)   # Filtered out 6 observations
 ##############################################
 
 # Run stats
+set.seed(30)
 mod <- lmer(growth.rate ~ dom * dli * time.point + (1|genotype/frag.id) + (1|tank), data = grres.f)
-Anova(mod)
+anova(mod)
+
 hist(resid(mod))
 ggplot(augment(mod), aes(x = dli, y = .resid)) +
   geom_point()
+
 #heteroskedasticity?
 # 3-way interaction is not significant
 ##2022-07-08  - after filtering out fake D frags, the threeway is significant.
@@ -259,7 +284,7 @@ ggplot(pred, aes(x = dli, y = fit, color = dom)) +
   scale_shape_manual(values = c(20, 4)) +
   coord_cartesian(ylim = c(-0.06, 0.5))
 
-left_join(grres.f, df) %>%
+left_join(grres.f, df) %>%  #again not running 20220713
   filter(time.point == "T2", light.level == "Natural", dom == "D") %>%
   select(growth.rate, dom, light.level, time.point, genotype, frag.id, growth.rate, propD) %>%
   arrange(-growth.rate)

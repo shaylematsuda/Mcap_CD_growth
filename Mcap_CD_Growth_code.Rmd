@@ -399,7 +399,7 @@ df <- df %>%
 # Fill in missing metadata for a couple of frags at  T2
 df  <- df %>% 
   group_by(frag.id) %>%
-  fill(genotype, light.level, big.tank, tank, depth.m, dom, color, treatment) %>%
+  fill(genotype, light.level, big.tank, tank, dom) %>%
   ungroup()
 
 ```
