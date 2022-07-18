@@ -182,7 +182,7 @@ light_plot<-ggplot(data=Mcap.light.2.melt.meta, aes(x=datetime, y=Light, group =
   ggtitle("UROP light")+
   theme(plot.title = element_text(size=20, face = "italic"));light_plot 
 
-light_plot+facet_wrap(~Shade)
+light_plot+facet_wrap(~Shade, scales = "free_y")
 light_plot + xlim(as_datetime("2017-11-30"),  as_datetime("2017-12-01"))
 
 light_plot<-ggplot(data=Mcap.light.2.melt.meta, aes(x=datetime, y=Light, color=Light.logger)) +
@@ -290,8 +290,23 @@ light_res_bytimepoint <- Mcap.light.2.melt.meta %>%
 # Write to file
 write_csv(light_res_bytimepoint, path = "dli.csv")
 
+#### calculate average daily maxima
+avg_daily_maxima <- Mcap.light.2.melt.meta %>%
+  group_by(Light.logger, date = date(datetime), Shade) %>%     # group by light logger and day
+  summarise(max = max(Light)) %>%    # calc max for each logger on each day
+  group_by(Shade, timepoint = date < "2017-11-29") %>%         # group by shade treatment and timepoint (11-29cutoff)
+  summarise(avg_max = mean(max, na.rm = T)) %>%                           # calculate average
+  mutate(timepoint = case_when(timepoint == TRUE ~ "T1",
+                               timepoint == FALSE ~ "T2"))
 
-
+# SHow that avg daily maxima and DLI are proportional
+avg_daily_maxima %>%
+  arrange(timepoint, avg_max) %>%
+  full_join(light_res_bytimepoint) %>%
+  pivot_longer(cols = c(avg_max, avg_dli)) %>%
+  ggplot(aes(x = Shade, y = value, color = timepoint, group = timepoint)) +
+  geom_point() + geom_line() +
+  facet_wrap(~name, scales = "free_y")
 ```
 
 
