@@ -243,6 +243,9 @@ light_plot<-ggplot(data=Mcap.light.2.melt.meta, aes(x=datetime, y=Light, group =
 
 
 
+Mcap.light.2.melt.meta <- Mcap.light.2.melt.meta %>%
+  mutate(time.point = case_when(date(datetime) < "2017-11-29" ~ "T1",
+                                date(datetime) >="2017-11-29" ~ "T2"))
 
 #model testing if loggers differ within treatment
 mod<- lm(Light~Shade:Light.logger, data=Mcap.light.2.melt.meta)
