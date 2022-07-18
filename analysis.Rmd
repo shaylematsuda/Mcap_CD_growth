@@ -96,6 +96,8 @@ ggplot(df.mort.noT0, aes(x = time.point, y = mortality, color = dom, fill=dom)) 
    theme_classic()+
     geom_boxplot()
 
+
+
 ```
 Mortality models
 ```{r}
@@ -104,7 +106,7 @@ Mortality models
 # lmer
 #all time points
 set.seed(30)
-mod<-lmer(mortality ~ dom  *light.level * time.point + (1|frag.id) + (1|genotype) + (1|tank), data = df.mort)
+mod<-lmer(mortality ~ dom  *light.level * time.point +  (1|genotype/frag.id) + (1|tank), data = df.mort)
 anova(mod)
 
 emm <- emmeans(mod, ~ dom*light.level|time.point)
@@ -117,32 +119,32 @@ shapiro.test(residuals(mod))  #p-value < 2.2e-16
 qqPlot(residuals(mod)) #not normal
 
 #Just T1 and T2
-set.seed(30)
-mod<-lmer(mortality ~ dom  *light.level * time.point + (1|frag.id) + (1|genotype) + (1|tank), data = df.mort.noT0)
-anova(mod)
+# set.seed(30)
+# mod<-lmer(mortality ~ dom  *light.level * time.point + (1|genotype/frag.id) + (1|tank), data = df.mort.noT0)
+# anova(mod)
 
 # mod<-glm(mortality/100 ~ dom  *light.level * time.point, data = df.mort, family = "quasibinomial")
 # Anova(mod)
 
-hist(residuals(mod)) #normal
-shapiro.test(residuals(mod))  #p-value < 2.2e-16
-qqPlot(residuals(mod)) #not normal
+# hist(residuals(mod)) #normal
+# shapiro.test(residuals(mod))  #p-value < 2.2e-16
+# qqPlot(residuals(mod)) #not normal
 
 
 #transform data
 #log
-df.mort$mortality_log<-log10(1+df.mort$mortality)
-df.mort$mortality_asin<-asin(sqrt(df.mort$mortality/100))
-df.mort$mortality_logit <- log(((df.mort$mortality/100)+0.001)/(1-((df.mort$mortality/100)+0.001)))
-plot(df.mort$mortality_logit)
-plot(df.mort$mortality_log)
-plot(df.mort$mortality)
-mod<-lmer(mortality_logit ~ dom * light.level * time.point + (1|frag.id) + (1|genotype) + (1|tank), data = df.mort)
-anova(mod)
-  hist(residuals(mod)) #normal
-  shapiro.test(residuals(mod))  #p-value 3.483e-10
-  qqPlot(residuals(mod)) # residuals look better, not great but I think ok
-  
+# df.mort$mortality_log<-log10(1+df.mort$mortality)
+# df.mort$mortality_asin<-asin(sqrt(df.mort$mortality/100))
+# df.mort$mortality_logit <- log(((df.mort$mortality/100)+0.001)/(1-((df.mort$mortality/100)+0.001)))
+# plot(df.mort$mortality_logit)
+# plot(df.mort$mortality_log)
+# plot(df.mort$mortality)
+# mod<-lmer(mortality_logit ~ dom * light.level * time.point + (1|frag.id) + (1|genotype) + (1|tank), data = df.mort)
+# anova(mod)
+#   hist(residuals(mod)) #normal
+#   shapiro.test(residuals(mod))  #p-value 3.483e-10
+#   qqPlot(residuals(mod)) # residuals look better, not great but I think ok
+#   
   # mortres <- augment(mod)
   #   ggplot(mortres, aes(x = .resid, fill = .cooksd > 0.1)) + geom_histogram(bins = 50) 
   #           #do we get rid of the handful of samples?
@@ -156,27 +158,20 @@ anova(mod)
   
   
 
-emm <- emmeans(mod, ~ dom*light.level|time.point)
-rbind(contrast(emm, method = "pairwise", by = "light.level"), adjust = "fdr")
+# emm <- emmeans(mod, ~ dom*light.level|time.point)
+# rbind(contrast(emm, method = "pairwise", by = "light.level"), adjust = "fdr")
+# 
+# data.frame(emm) %>%
+#   ggplot(aes(x = light.level, y = emmean, color = dom)) +
+#   geom_point(position = position_dodge(width  = 0.5)) +
+#   geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL),
+#                 position = position_dodge(width  = 0.5))+
+#   facet_wrap(~time.point)+
+#   theme_classic()
+# cld(emm)
 
 
-## *********** Ross ********* - in this plot, why would T0 have wider bars for D than C if everything is 0% mortality)?
-data.frame(emm) %>%
-  ggplot(aes(x = light.level, y = emmean, color = dom)) +
-  geom_point(position = position_dodge(width  = 0.5)) +
-  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL),
-                position = position_dodge(width  = 0.5))+
-  facet_wrap(~time.point)+
-  theme_classic()
-cld(emm)
   
-#  #cube - not any better than log
-# df.mort$mortality_cube<-df.mort$mortality^(1/3)
-# mod<-lmer(mortality_cube ~ dom * light.level * time.point + (1|frag.id) + (1|genotype) + (1|tank), data = df.mort)
-# anova(mod)
-#   hist(residuals(mod)) #normal
-#   shapiro.test(residuals(mod))  #p-value 1.018e-10
-#   qqPlot(residuals(mod)) # residuals not any better than above. I think log is good. 
 ```
 
 
