@@ -104,7 +104,7 @@ loggers_wide$date<-date(loggers_wide$datetime) #pull out date
 #write_csv(loggers_wide,"loggers_wide_20220713.csv")
 
 #REMOVE LOGGER 6377 UNLESS YOU LOCATE CALIBRATION FILE
-loggers_wide = subset(light_loggers_wide, select = -c(logger_6377) )
+loggers_wide = subset(loggers_wide, select = -c(logger_6377) )
 
 
 Mcap.light<-loggers_wide #make a copy
@@ -215,6 +215,8 @@ light_plot<-ggplot(data=Mcap.light.2.melt.meta, aes(x=datetime, y=Light, group =
 
 
 ```{r}
+### REDO LIGHT CALCULATIONS SEPARATELY FOR EACH TIME POINT
+
 # Calculate average daily light integral for each shade treatment
 
 # number of loggers
@@ -231,63 +233,20 @@ light_res <- Mcap.light.2.melt.meta %>%
   
 light_res %>%
   arrange(Shade)
+
+light_res_bytimepoint <- Mcap.light.2.melt.meta %>%
+  group_by(Light.logger, date = date(datetime), Shade) %>%     # group by light logger and day
+  summarise(dli = sum(Light, na.rm = T) / n() * 0.0864) %>%    # calc DLI for each logger on each day
+  group_by(Shade, timepoint = date < "2017-11-29") %>%         # group by shade treatment and timepoint (11-29cutoff)
+  summarise(avg_dli = mean(dli)) %>%                           # calculate average
+  mutate(timepoint = case_when(timepoint == TRUE ~ "T1",
+                               timepoint == FALSE ~ "T2"))
+
+# Write to file
+write_csv(light_res_bytimepoint, path = "dli.csv")
 ```
 
 
-```{r}
-  
-  
-  
-# subset only > 0 values (daylight values)
-Mcap.light.2.melt.meta.DAY<-Mcap.light.2.melt.meta %>%
-  filter(Light>=1)
-
-#mean across entire experiment only if we do it this way
-Mcap.light.2.melt.meta.DAY %>%
- group_by(Shade) %>%
- summarise(mean=mean(Light), median=(median(Light)), min=(min(Light)))
-
-#summary stats T0-T1
-Mcap.light.T1 <- Mcap.light.2.melt.meta.DAY %>%
-                        filter(datetime >= as.Date('2017-10-29') & datetime <= as.Date('2017-11-29')) 
- Mcap.light.T1 %>%
-  group_by(Shade) %>%
-  summarise(mean=mean(Light), median=(median(Light)), max=max(Light), min=min(Light))
-
-  #extract max per day
-  Mcap.light.T1$date<-date(Mcap.light.T1$datetime)
-  T1.max<-Mcap.light.T1 %>%
-    group_by(date,Shade) %>%
-    summarise(max_val = max(Light))
-
-  # average daily max by shade treatment
-  T1mean<-T1.max%>%
-   group_by(Shade)%>%
-    summarise(mean=mean(max_val))
-    T1mean$time.point<-"T1"
-
-#summary T1-Ts
-Mcap.light.T2 <- Mcap.light.2.melt.meta.DAY %>%
-                        filter(datetime >= as.Date('2017-11-30') & datetime <= as.Date('2018-01-08')) #why not working
- Mcap.light.T2 %>%
-  group_by(Shade) %>%
-  summarise(mean=mean(Light), median=(median(Light)), max=max(Light), min=min(Light))
-
-  #extract max per day
-  Mcap.light.T2$date<-date(Mcap.light.T2$datetime)
-  T2.max<-Mcap.light.T2 %>%
-    group_by(date,Shade) %>%
-    summarise(max_val = max(Light))
-
-  # average daily max by shade treatment
-  T2mean<-T2.max%>%
-   group_by(Shade)%>%
-    summarise(mean=mean(max_val))
-    T2mean$time.point<-"T2"
-
-#combine for ROSS
-Light.by.time<- left_join(T1mean, T2mean, by="Shade")
-```
 
 
 #Temperature Loggers
