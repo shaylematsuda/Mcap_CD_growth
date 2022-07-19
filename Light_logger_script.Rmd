@@ -255,7 +255,12 @@ mod<- lm(Light~Shade:Light.logger, data=Mcap.light.2.melt.meta)
   anova(mod)
   
 #add time point column 
+    
+  mod<- lm(Light~Shade*time.point, data=Mcap.light.2.melt.meta)
+  anova(mod)
   
+  emm <- emmeans(mod, ~ Shade*time.point)
+rbind(contrast(emm, method = "pairwise", by = "Light"), adjust = "fdr")
 ```
 
 

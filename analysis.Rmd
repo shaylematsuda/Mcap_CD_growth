@@ -129,8 +129,8 @@ qqPlot(residuals(mod)) #not normal
 
 #Just T1 and T2
 # set.seed(30)
-mod<-lmer(mortality ~ dom  *light.level * time.point + (1|genotype/frag.id) + (1|tank), data = df.mort.noT0)
-anova(mod)
+# mod<-lmer(mortality ~ dom  *light.level * time.point + (1|genotype/frag.id) + (1|tank), data = df.mort.noT0)
+# anova(mod)
 
 # mod<-glm(mortality/100 ~ dom  *light.level * time.point, data = df.mort, family = "quasibinomial")
 # Anova(mod)
