@@ -17,17 +17,17 @@ depthRange <- function(Kd1, Kd2, surfPAR, PAR) {
   return(c(z1, z2))
 }
 
-# Lowest light treatment = 0.35 DLI
-depthRange(0.35, 0.2, 20, 0.35)       # 11.6 to 20.2 meters
+# Lowest light treatment = 0.36 DLI
+depthRange(0.35, 0.2, 20, 0.36)       # 11.5 to 20.1 meters
 
-# Next light treatment = 0.75 DLI
-depthRange(0.35, 0.2, 20, 0.75)       # 9.3 to 16.4 meters
+# Next light treatment = 0.76 DLI
+depthRange(0.35, 0.2, 20, 0.76)       # 9.3 to 16.4 meters
 
-# Next light treatment = 1.5 DLI
-depthRange(0.35, 0.2, 20, 1.5)       # 7.4 to 13 meters
+# Next light treatment = 1.55 DLI
+depthRange(0.35, 0.2, 20, 1.55)       # 7.3 to 12.8 meters
 
-# Highest light treatment = 3.75 DLI
-depthRange(0.35, 0.2, 20, 3.75)       # 4.8 to 8.4 meters
+# Highest light treatment = 3.8 DLI
+depthRange(0.35, 0.2, 20, 3.8)       # 4.7 to 8.3 meters
 
 
 depthRange(0.35, 0.2, 25, 7.5) 
