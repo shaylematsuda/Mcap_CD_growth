@@ -80,7 +80,7 @@ df.mort %>%
 # frag 109 T1=10, no  T2
 
 # boxplot C v D:facet by shade treatment #####
-df.mort$light.level <- factor(df.mort$light.level, levels=c("Natural", "Low Shade", "Medium Shade", "High Shade")) #reorder factors
+df.mort$light.level <- factor(df.mort$light.level, levels=c("High Shade", "Medium Shade",  "Low Shade","Natural")) #reorder factors
 df.mort$time.point <- factor(df.mort$time.point, levels=c("T0", "T1", "T2")) #reorder factors
 
 # box plot
@@ -92,6 +92,8 @@ ggplot(df.mort, aes(x = time.point, y = mortality, color = dom, fill=dom)) +
 # box plot with no T0
 df.mort.noT0<-subset(df.mort, time.point=="T1"|time.point=="T2")
 ggplot(df.mort.noT0, aes(x = time.point, y = mortality, color = dom, fill=dom)) +
+  scale_color_manual(values=c("navy","darkorange"))+
+    scale_fill_manual(values=c("blue","orange"))+
   facet_wrap(~light.level, 1) + 
    theme_classic()+
     geom_boxplot()
