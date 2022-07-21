@@ -57,6 +57,13 @@ df.mort$time.point<-as.factor(df.mort$time.point)
 df.mort$big.tank<-as.factor(df.mort$big.tank)
 df.mort$tank<-as.factor(df.mort$tank)
 df.mort$dom<-as.factor(df.mort$dom)
+df.mort$light.level<-as.character(df.mort$light.level)
+df.mort$light.level[df.mort$light.level == "Natural"] <- "High Light"
+df.mort$light.level[df.mort$light.level == "Low Shade"] <- "Medium Light"
+df.mort$light.level[df.mort$light.level == "Medium Shade"] <- "Low Light"
+df.mort$light.level[df.mort$light.level == "High Shade"] <- "Almost Darkness"
+df.mort$light.level<-as.factor(df.mort$light.level)
+
 
 #plot
   ggplot(df.mort, aes(x = days, y = mortality, color = dom, group = frag.id)) +  # look at mort/time
@@ -80,17 +87,18 @@ df.mort %>%
 # frag 109 T1=10, no  T2
 
 # boxplot C v D:facet by shade treatment #####
-df.mort$light.level <- factor(df.mort$light.level, levels=c("High Shade", "Medium Shade",  "Low Shade","Natural")) #reorder factors
+df.mort$light.level <- factor(df.mort$light.level, levels=c("Almost Darkness", "Low Light",  "Medium Light","High Light")) #reorder factors
 df.mort$time.point <- factor(df.mort$time.point, levels=c("T0", "T1", "T2")) #reorder factors
 
 # box plot
-ggplot(df.mort, aes(x = time.point, y = mortality, color = dom, fill=dom)) +
-  facet_wrap(~light.level, 1) + 
-   theme_classic()+
-    geom_boxplot()
+# ggplot(df.mort, aes(x = time.point, y = mortality, color = dom, fill=dom)) +
+#   facet_wrap(~light.level, 1) + 
+#    theme_classic()+
+#     geom_boxplot()
 
 # box plot with no T0
 df.mort.noT0<-subset(df.mort, time.point=="T1"|time.point=="T2")
+
 ggplot(df.mort.noT0, aes(x = time.point, y = mortality, color = dom, fill=dom)) +
   scale_color_manual(values=c("navy","darkorange"))+
     scale_fill_manual(values=c("blue","orange"))+
@@ -98,6 +106,14 @@ ggplot(df.mort.noT0, aes(x = time.point, y = mortality, color = dom, fill=dom)) 
    theme_classic()+
     geom_boxplot()
 
+library(ggbeeswarm)
+## Violin plot..looks awful bc of 0s.
+
+ggplot(df.mort.noT0, aes(x = time.point, y = mortality, color = dom, fill=dom)) +
+  geom_violin(alpha = 0.5,position = position_dodge(width = 0.9)) +
+  #geom_beeswarm() +
+  theme(legend.position = "none")+
+    facet_wrap(~light.level, 1) 
 
 
 ```
