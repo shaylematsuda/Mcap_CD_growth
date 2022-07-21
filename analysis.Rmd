@@ -48,7 +48,6 @@ mislabeled_D <- df %>%
 
 df <- df %>%
   anti_join(mislabeled_D)
-
 ```
 
 # Mortality
@@ -115,14 +114,6 @@ rbind(contrast(emm, method = "pairwise", by = "light.level"), adjust = "fdr")
 # mod<-glm(mortality/100 ~ dom  *light.level * time.point, data = df.mort, family = "quasibinomial")
 # Anova(mod)
 
-df.mort %>%
-  group_by(dom, light.level, time.point) %>%
-  summarize(mean = mean(mortality),
-            median = median(mortality),
-            q25 = quantile(mortality, 0.25),
-            q75 = quantile(mortality, 0.75)) %>%
-  print(n = nrow(.))
-
 hist(residuals(mod)) #normal
 shapiro.test(residuals(mod))  #p-value < 2.2e-16
 qqPlot(residuals(mod)) #not normal
@@ -143,12 +134,12 @@ qqPlot(residuals(mod)) #not normal
 #transform data
 #log
 # df.mort$mortality_log<-log10(1+df.mort$mortality)
-# df.mort.noT0$mortality_asin<-asin(sqrt(df.mort.noT0$mortality/100))
+# df.mort$mortality_asin<-asin(sqrt(df.mort$mortality/100))
 # df.mort$mortality_logit <- log(((df.mort$mortality/100)+0.001)/(1-((df.mort$mortality/100)+0.001)))
 # plot(df.mort$mortality_logit)
 # plot(df.mort$mortality_log)
 # plot(df.mort$mortality)
-# mod<-lmer(mortality_asin ~ dom * light.level * time.point + (1|frag.id) + (1|genotype) + (1|tank), data = df.mort.noT0)
+# mod<-lmer(mortality_logit ~ dom * light.level * time.point + (1|frag.id) + (1|genotype) + (1|tank), data = df.mort)
 # anova(mod)
 #   hist(residuals(mod)) #normal
 #   shapiro.test(residuals(mod))  #p-value 3.483e-10
@@ -186,7 +177,12 @@ qqPlot(residuals(mod)) #not normal
 
 # Growth
 ```{r}
-
+# Add mean daily light integrals for light treatment categories
+df <- df %>%
+  mutate(dli = case_when(light.level == "Natural" ~ 3.81,
+                         light.level == "Low Shade" ~ 1.55,
+                         light.level == "Medium Shade" ~ 0.755,
+                         light.level == "High Shade" ~ 0.359))
   
 
 # Plot buoyant weight data for each frag
@@ -226,25 +222,6 @@ gr<-gr %>%
 
 ##############################################
 
-# Add mean daily light integrals for light treatment categories
-dli <- read_csv("dli.csv") %>%
-  rename(time.point = timepoint)  %>%
-  mutate(light.level = case_when(Shade == "1_cloth" ~ "Natural",
-                                 Shade == "2_cloth" ~ "Low Shade",
-                                 Shade == "3_cloth" ~ "Medium Shade",
-                                 Shade == "4_cloth" ~ "High Shade")) %>%
-  select(light.level, time.point, dli = avg_dli)
-
-gr <- gr %>%
-  full_join(dli)
-# df <- df %>%
-#   mutate(dli = case_when(light.level == "Natural" ~ 3.81,
-#                          light.level == "Low Shade" ~ 1.55,
-#                          light.level == "Medium Shade" ~ 0.755,
-#                          light.level == "High Shade" ~ 0.359))
-
-#########################
-
 # Plot growth rates by predictors
 ggplot(gr, aes(x = light.level, y = growth.rate)) +
   geom_jitter() +
@@ -265,17 +242,6 @@ nrow(grres) - nrow(grres.f)   # Filtered out 6 observations
 
 ##############################################
 
-# Summarize growth data prior to stats
-grres.f %>%
-  group_by(dli, time.point) %>%
-  summarize(meangr = mean(growth.rate)) %>%
-  arrange(time.point,  dli)
-
-
-
-
-############
-
 # Run stats
 set.seed(30)
 mod <- lmer(growth.rate ~ dom * dli * time.point + (1|genotype/frag.id) + (1|tank), data = grres.f)
@@ -290,13 +256,8 @@ ggplot(augment(mod), aes(x = dli, y = .resid)) +
 ##2022-07-08  - after filtering out fake D frags, the threeway is significant.
 
 # Get model outputs
-emm <- emmeans(mod, ~ dom*dli|time.point, at = list(dli = sort(unique(gr$dli))))
-emm
-
-#
-rbind(contrast(emm, by = c("dli", "time.point"))[c(2,4,6,8,9,11,13,15)], adjust = "fdr")
-# pairwise comparisons -- only the dli:timepoint combos that actually appear in the data
-rbind(contrast(emm, method = "pairwise", by = c("dli", "time.point"))[c(2,4,6,8,9,11,13,15)], adjust = "fdr")
+emm <- emmeans(mod, ~ dom*dli|time.point, at = list(dli = sort(unique(df$dli))))
+rbind(contrast(emm, method = "pairwise", by = c("dli", "time.point")), adjust = "fdr")
 
 
 # Get fitted values to plot
@@ -426,5 +387,9 @@ data.frame(emm) %>%
 ```
 
 
+```{r}
+df.mort %>%
+  count( genotype)
 
+```
 

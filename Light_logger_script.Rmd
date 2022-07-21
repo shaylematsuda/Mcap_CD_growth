@@ -293,7 +293,7 @@ light_res_bytimepoint <- Mcap.light.2.melt.meta %>%
                                timepoint == FALSE ~ "T2"))
 
 # Write to file
-write_csv(light_res_bytimepoint, path = "dli.csv")
+#write_csv(light_res_bytimepoint, path = "dli.csv")
 
 #### calculate average daily maxima
 avg_daily_maxima <- Mcap.light.2.melt.meta %>%
@@ -312,6 +312,13 @@ avg_daily_maxima %>%
   ggplot(aes(x = Shade, y = value, color = timepoint, group = timepoint)) +
   geom_point() + geom_line() +
   facet_wrap(~name, scales = "free_y")
+
+# model showing light treatments were different from each other, Mcap.light.2.melt.meta
+mod <- lmer(Light ~ Shade*time.point + (1|Tank), 
+            data = Mcap.light.2.melt.meta)
+anova(mod)
+
+emm <- emmeans(mod, ~ color:dom*light.level|time.point)
 ```
 
 
@@ -519,7 +526,7 @@ Mcap.temp.T1 <- Mcap.temp.meta.melt %>%
 
 #mean of T0-T1
 Mcap.temp.T1 %>%
-  group_by(logger) %>%                                          # group by shade treatment
+  #group_by(logger) %>%                                          # group by shade treatment
   summarise(meantemp = mean(temp, na.rm=T), sd=sd(temp, na.rm=T))  
 
 #summary T1-T2
@@ -528,7 +535,7 @@ Mcap.temp.T2 <- Mcap.temp.meta.melt %>%
 
 #mean of T1-T2
 Mcap.temp.T2 %>%
-  group_by(logger) %>%                                          # group by shade treatment
+  #group_by(logger) %>%                                          # group by shade treatment
   summarise(meantemp = mean(temp, na.rm=T), sd=sd(temp, na.rm=T))  
 
 ```
