@@ -106,17 +106,54 @@ ggplot(df.mort.noT0, aes(x = time.point, y = mortality, color = dom, fill=dom)) 
    theme_classic()+
     geom_boxplot()
 
-library(ggbeeswarm)
-## Violin plot..looks awful bc of 0s.
+
 
 ggplot(df.mort.noT0, aes(x = time.point, y = mortality, color = dom, fill=dom)) +
-  geom_violin(alpha = 0.5,position = position_dodge(width = 0.9)) +
-  #geom_beeswarm() +
-  theme(legend.position = "none")+
-    facet_wrap(~light.level, 1) 
+  facet_wrap(~light.level, nrow = 1) +
+    geom_boxplot()
 
 
+
+
+df.mort.noT0 <- df.mort.noT0 %>%
+  mutate(dli = case_when(light.level == "High Light" ~ 3.81,
+                         light.level == "Medium Light" ~ 1.55,
+                         light.level == "Low Light" ~ 0.755,
+                         light.level == "Almost Darkness" ~ 0.359))
+df.mort.T2 <- filter(df.mort.noT0, time.point == "T2")
+
+
+
+mod <- glm(mortality/100 ~ dli * dom + time.point, family = "quasibinomial", data = df.mort.noT0)
+Anova(mod)
+
+mod <- glm(mortality/100 ~ dli * dom, family = "quasibinomial", data = filter(df.mort.T2, !frag.id %in% c("2", "6")))
+Anova(mod)
+res <- expand_grid(dom = c("C", "D"), dli = seq(0,4,0.1))
+res$pred <- predict(mod, res, type = "response")
+
+df.mort.T2 %>%
+  filter(dom == "D", light.level == "High Light") %>% arrange(-mortality)
+
+df.mort %>% filter(frag.id == "144")
+
+df.mort %>%
+  count(light.level, time.point, dom) %>%
+  arrange(light.level, dom, time.point) %>%
+  print(n = nrow(.)) 
+  
+
+
+
+ggplot(data = df.mort.T2,
+       aes(x = dli, y = mortality/100, color = dom, group = dom, fill=dom)) +
+  #geom_point(position = position_jitter(w = 0.1, h = 0)) +
+  geom_jitter() +
+  #facet_wrap(~dom) +
+  geom_line(data = res, aes(y = pred))
 ```
+
+
 Mortality models
 ```{r}
 # models ####
