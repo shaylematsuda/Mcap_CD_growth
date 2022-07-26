@@ -87,6 +87,23 @@ ggplot(data = df.mort.T2,
        aes(x = dli, y = mortality/100, color = dom, group = dom, fill=dom)) +
   geom_jitter() +
   geom_line(data = res, aes(y = pred))
+
+#plot nicer
+
+ggplot(data = df.mort.T2,
+       aes(x = dli, y = mortality/100, color = dom, group = dom, fill=dom)) +
+  geom_jitter() +
+  geom_line(data = res, aes(y = pred))+
+  scale_color_manual(values=c("deepskyblue3", "chocolate3")) +
+  ylab("Percent Tissue Loss")+
+  xlab("Daily Light Integral")+
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(), 
+        axis.line = element_line(colour = "black"))
+
+
+
 ```
 
 # Growth
@@ -171,7 +188,50 @@ ggplot(pred, aes(x = dli, y = fit, color = dom)) +
   scale_shape_manual(values = c(20, 4)) +
   coord_cartesian(ylim = c(-0.06, 0.5))
 
-left_join(grres.f, df) %>%  #again not running 20220713
+
+
+grow_plot<-ggplot(pred, aes(x = dli, y = fit, color = dom)) +
+  geom_violin(data = left_join(grres.f, df), aes(y = growth.rate, group = interaction(dom, dli)),
+              scale = "width") +
+    scale_color_manual(values=c("deepskyblue3", "chocolate3")) +
+  geom_line() +
+  geom_ribbon(aes( ymin = lci, ymax = uci),  alpha = 0.2, lwd = 0) +
+  scale_shape_manual(values = c(20, 4)) +
+  coord_cartesian(ylim = c(-0.06, 0.5))+
+   ylab("Growth")+
+   xlab("Daily Light Integral")+
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(), 
+        axis.line = element_line(colour = "black"))+
+    facet_wrap(~ time.point) +
+theme(legend.position = "none",
+        strip.background = element_rect(colour="black",
+                                        fill="white"));grow_plot
+
+library(cowplot)
+
+cowGrow<-ggplot(pred, aes(x = dli, y = fit, color = dom)) +
+  geom_violin(data = left_join(grres.f, df), aes(y = growth.rate, group = interaction(dom, dli)),
+              scale = "width") +
+    scale_color_manual(values=c("deepskyblue3", "chocolate3")) +
+  geom_line() +
+  geom_ribbon(aes( ymin = lci, ymax = uci),  alpha = 0.2, lwd = 0) +
+  scale_shape_manual(values = c(20, 4)) +
+  coord_cartesian(ylim = c(-0.06, 0.5))+
+   ylab("Growth")+
+   xlab("Daily Light Integral")+
+      facet_wrap(~ time.point) +
+  theme_cowplot(12);cowGrow
+
+
+plot_grid(cowGrow, temp_plot, labels = c('A', 'B'), label_size = 12, ncol=1, align = "v", axis="t",rel_widths = c(1,2))
+
+
+
+
+
+left_join(grres.f, df) %>%  
   filter(time.point == "T2", light.level == "Natural", dom == "D") %>%
   select(growth.rate, dom, light.level, time.point, genotype, frag.id, growth.rate, propD) %>%
   arrange(-growth.rate)

@@ -3,6 +3,8 @@ title: "logger"
 author: "Shayle Matsuda"
 date: "1/5/2022"
 output: html_document
+editor_options: 
+  chunk_output_type: console
 ---
 Light and Temp loggers 
 Original script by M. Hoban
@@ -511,15 +513,9 @@ temp_plot<-ggplot(data=Mcap.temp.meta.melt, aes(x=datetime, y=temp, color=logger
   theme(plot.title = element_text(size=20, face = "italic"));temp_plot 
 
 
+
 temp_plot<-ggplot(data=Mcap.temp.meta.melt, aes(x=datetime, y=temp)) +
-  # geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
-  #               width=0.1, show.legend = F)+
-  #geom_point(aes(color=Treatment), size=4, show.legend = F)+
   geom_smooth( linetype=1, show.legend = F)+
-  #scale_color_manual(values=c("dodgerblue3", "darkred"))+
-  xlab("") + #Label the X Axis
-  #ylim(0, 11) + #set Y limits
-  #scale_y_log10()+
   theme_bw() + #Set the ITSkground color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
         axis.title=element_text(size=14,face="bold"), #Set axis format
@@ -533,9 +529,10 @@ temp_plot<-ggplot(data=Mcap.temp.meta.melt, aes(x=datetime, y=temp)) +
         panel.grid.minor = element_blank(),
         panel.background = element_rect(colour = "black", size=1))+
   theme(aspect.ratio=1)+
-  ylab(expression(paste("temp"))) +
-  ggtitle("UROP temp")+
+  ylab(expression(paste('Temperature ('*~degree*C*')'))) +
+  xlab("")+
   theme(plot.title = element_text(size=20, face = "italic"));temp_plot 
+
 
 #summary stats
 
