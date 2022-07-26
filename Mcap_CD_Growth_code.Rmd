@@ -6,24 +6,25 @@ editor_options:
   chunk_output_type: console
 ---
 
+This is the data wrangling script for the Symbiont-light tradeoffs paper. 
+Shayle Matsuda, Mariah Opalek, Raphael Ritson-Williams, Ruth Gates, Ross Cunning
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-options(digits = 5)              # Modify global options - set sig figs to 5 digits
+options(digits = 5) # Modify global options - set sig figs to 5 digits
 
 ```
 
-## Mcap CD growth experiment: Buoyant Weight and qPCR
- 
-#Buoyant WEIGHT
+# Metadata
 ```{r}
-#rm(list=ls()) # removes all prior objects
-library(tidyverse)
-library("car") #levenes test
-library("ggplot2") #plotting
-library("plotrix") #plotting
-require("gridExtra") #Arrange Plots for output
+#load packages
+library("car") 
+library("ggplot2") 
+library("plotrix") 
+require("gridExtra") 
 require("utils")
 library(lubridate)
+library(tidyverse)
 
 #load metadata
 geno.frag<-read.csv("UROP_metadata_colony.csv")
@@ -37,61 +38,34 @@ shade.levels<-read.csv("shade.levels.csv")
   shade.levels$light.level<-as.factor((shade.levels$light.level))
   shade.levels<-unique(shade.levels) #remove dups
 
-  # geno_fragid<-geno.frag$frag.id               #Check for missing data
-  # shade.levels_fragid<-shade.levels$frag.id
-  #diffs<-as.data.frame(setdiff( geno_fragid, shade.levels_fragid))
-  #metadata<-merge(shade.levels,geno.frag, by.x="frag.id",no.dups=T)
-
-#add in depth data
+#load depth data
 geno.depth <- read.csv("UROP_geno_Depth.csv")
-geno.depth$genotype <- as.factor(as.character(geno.depth$genotype))
-  # meta_genoID<-metadata$genotype        ##### Check for missing data
-  # depth_genoID<-geno.depth$genotype
-  #diffs<-as.data.frame(setdiff(meta_genoID, depth_genoID)) # no depth data for 912, 916, 909, 911, 910, 922, 920
-  #metadata<-merge(metadata,geno.depth, by.x="genotype")
+  geno.depth$genotype <- as.factor(as.character(geno.depth$genotype))
 
-# add tank meta
+#load tank data
 tank <- read.csv("UROP_frag_tank.csv")
-tank$frag.id <- as.factor(as.character(tank$frag.id))
+  tank$frag.id <- as.factor(as.character(tank$frag.id))
 
+#combine
 metadata <- full_join(shade.levels, geno.frag)
 metadata <- full_join(metadata, tank)
 metadata <- full_join(metadata, geno.depth)
 metadata <- as_tibble(metadata)
-
-metadata$depth.m<-as.character(metadata$depth.m) #below wouldn't run with depth as numeric, need to flag or remove in downstream, but I dont think we even need it. 
-
-metadata<-dplyr::select(metadata, -c("treatment","tratment", "depth.m")) # cut cols here bc not running in tidyverse below for some unknown reason...
-
-# metadata <- metadata %>% 
-#   #select(metadata,-c(-treatment, -tratment,-depth)) %>% #added depth to this bc of NA so can't do much with it anyway 20220713 Also this line doesn't run
-#   mutate(depth.m = replace_na(depth.m, "unknown")) %>%
-#   drop_na(light.level)
+metadata<-dplyr::select(metadata, -c("treatment","tratment", "depth.m")) # cut unneccessary cols
 ```
-BW: original code HP
-
+#Buoyant Weight
 ```{r}
 BW.data.T0 <-read.csv('Buoyant_weight/UROP_BW_T0_20171029.csv') 
 BW.data.T1 <-read.csv('Buoyant_weight/UROP_BW_T1_20171129.csv') 
 BW.data.T2 <-read.csv('Buoyant_weight/UROP_BW_T2_20180108.csv')
 BW.data <- rbind(BW.data.T0, BW.data.T1, BW.data.T2) #combine
+BW.data<-merge(BW.data, metadata, by.x= "frag.id") #merge with metadata
+  BW.data$frag.id<-as.factor(as.character(BW.data$frag.id))
+  BW.data$temp.c<-as.numeric(BW.data$temp.c)
+  BW.data$time.point<-as.factor(as.character(BW.data$time.point))
 
-BW.data<-merge(BW.data, metadata, by.x= "frag.id") 
+#HPutnam code
 
-  BW_fragid<-BW.data$frag.id
-  meta_fragid<-metadata$frag.id
-  setdiff(BW_fragid, meta_fragid) #check what we lose, 142 144  73 283 217  cannot find genotype info in MO notes
-
-
-BW.data$frag.id<-as.factor(as.character(BW.data$frag.id))
-BW.data$temp.c<-as.numeric(BW.data$temp.c)
-BW.data$time.point<-as.factor(as.character(BW.data$time.point))
-
-BW <- BW.data$mass.g
-Temp <- BW.data$temp.C 
-
-
-#HP
 # load data 
 CalData<-read.csv('Buoyant_weight/Bouyant_weight_calibration_curve.csv', header=T, sep=",")
 #Data with Standard weights in grams in deionized water, saltwater, and the temp that they were measured at
@@ -155,22 +129,13 @@ CoralWeight <- BW/(1-(SWDensity/CoralDensity))
    
 BW.data$Dry.Weigh.g <- BWCalc_Mcap(BW=BW, Temp=Temp) #use function to calculate dry weight
 hist(BW.data$Dry.Weigh.g) #not normal
- #BW.data$Dry.Weigh.g_log<-log10(BW.data$Dry.Weigh.g+1)
- #hist(BW.data$Dry.Weigh.g_log) #better
-#boxplot(BW.data$Dry.Weigh.g_log) #examine data
 
-# Entering the tidyverse!!!
+# Entering the tidyverse
 BW.data <- tibble(BW.data)
-
-
-# BW.data <- BW.data %>%                        ### not running here so redid in dplyr below
-#   select(-mass.g, -temp.c, -notes, -date) 
-
-BW.data<-dplyr::select(BW.data, -c("mass.g","temp.c", "date")) # cut cols here bc not running in tidyverse below for some unknown reason...
-
+BW.data<-dplyr::select(BW.data, -c("mass.g","temp.c", "date")) # cut cols unneeded
 ```
 
-# qPCR
+# qPCR data
 ```{r}
 # Read in and tidy processed qPCR data
 qpcr <- read_csv("qPCR/qpcr_processed.csv")
@@ -195,17 +160,14 @@ missing_bw <- anti_join(qpcr, BW.data)
 # Samples with BW data but NO qPCR data at T0 --- n=43 (these were likely failed qPCRs)
 missing_qpcr <- anti_join(BW.data, qpcr) %>%
    filter(time.point == "T0")
-#inner_join(missing_qpcr, df)
-#df %>% filter(is.na(propD), time.point == "T0")
 
 # Remove all samples with no BW data
 df <- df %>%
   filter(!is.na(Dry.Weigh.g))
-```
+
 
 # Fill in missing symbiont data
-```{r}
-# Sometimes missing symbiont data for frags where qPCR failed -- assign dominant symbiont based on other frags of same geno. First -- check whether any genotypes showed variation in dominant symbiont across frags?
+# Sometimes missing symbiont data for frags where qPCR failed -- assign dominant symbiont based on other frags of same genotype.
 df %>%
   group_by(genotype) %>%
   drop_na(dom) %>%
@@ -217,7 +179,6 @@ df %>%
 # frag21 T0 had "A" and "B" run with diff. dom syms... which is right? Use D bc frag20 had D?  or throw away?
 # 864 screening biopsy was 90% D
 # could switch this colony to all D....
-
 df %>%
   dplyr::filter(genotype == "864")  %>%
   arrange(frag.id, time.point) %>%
@@ -267,25 +228,21 @@ df %>%
 df <- df %>%
   mutate(dom = if_else(genotype == "894", "C", dom))
 
-
 df <- df %>%
   group_by(genotype) %>%
   mutate(dom = replace_na(dom, unique(dom[!is.na(dom)]))) %>%
   ungroup()
-
 ```
 
-# mortality (Percent scores)
+# Partial tissue loss (Percent scores, in 5% intervals)
 ```{r}
-
 mort<-read_csv("partialMortality.csv")
-mort$frag.id <- as.factor(as.character(mort$frag.id))
+  mort$frag.id <- as.factor(as.character(mort$frag.id))
+  mort <- as_tibble(mort)
+  mort<-drop_na(mort)
+  mort2<-pivot_wider(mort, names_from = time.point, values_from = percent.mort, )
 
-mort <- as_tibble(mort)
-mort<-drop_na(mort)
-mort2<-pivot_wider(mort, names_from = time.point, values_from = percent.mort, )
-
-# Remove frags FROM MORT with high partial mortality at start of experiment: 2, 8, 32, 97, 144, 196, 235and 276
+# Remove frags with high partial mortality at start of experiment (T0): 2, 8, 32, 97, 144, 196, 235 and 276
 mort2<-mort2 %>%
   filter(!frag.id==2) %>%
   filter(!frag.id==8)%>%
@@ -296,32 +253,7 @@ mort2<-mort2 %>%
     filter(!frag.id==235)%>%
     filter(!frag.id==276)
 
-# Remove frags FROM DF with high partial mortality at start of experiment: 2, 8, 32, 97, 144, 196, 235and 276
-df<-df %>%
-  filter(!frag.id==2) %>%
-  filter(!frag.id==8)%>%
-  filter(!frag.id==32)%>%
-    filter(!frag.id==97)%>%
-    filter(!frag.id==144)%>%
-    filter(!frag.id==196)%>%
-    filter(!frag.id==235)%>%
-    filter(!frag.id==276)
-
-# change missing T1 mort scores to the score at T2 to be conservative
-# ******* Decide if we want to put this back in ********* removed 20220725
-
-# mort2<-mort2 %>%
-#   mutate(T1 = case_when(
-#     is.na(T1) & T2 == 100 ~ 100,
-#     is.na(T1) & T2 == 95 ~ 95,
-#     is.na(T1) & T2 == 40 ~ 40,
-#     is.na(T1) & T2 == 25 ~ 25,
-#     is.na(T1) & T2 == 30 ~ 30,
-#     is.na(T1) & T2 == 0 ~ 0,
-#     TRUE ~ T1
-#   ))
-
-# change missing T2 mort scores to the score at T1 ONLY for 100% mortality
+# change missing T2 scores to the score at T1 ONLY for 100% mortality at T1
 mort2<-mort2 %>%
   mutate(T2 = case_when(
     is.na(T2) & T1 == 100 ~ 100,
@@ -329,67 +261,23 @@ mort2<-mort2 %>%
   ))
 
 mort2<-pivot_longer(mort2, cols = c(T0,T1, T2), names_to = "time.point", values_to = "mortality")
-
 df <- full_join(df, mort2) # we are missing some values. 
-# df <- df %>%   # removed 20220725 re-scored mort photos at T0
-  # mutate(mortality = if_else(time.point == "T0", 0, mortality)) # mortality at T0 is 0
 
 #remove frags with only T0
 df<-df %>%
   filter(!frag.id==25)%>%
     filter(!frag.id==286)
 
-
-#to edit metadata below, all must go back to characters or numeric....i dont make the rules
-df$light.level<-as.character(df$light.level)
-df$genotype<-as.character(df$genotype)
-df$dom<-as.character(df$dom)
-df$big.tank<-as.numeric(df$big.tank)
-df$tank<-as.numeric(df$tank)
-df$days<-as.numeric(df$days)
+#to edit metadata below, all must go back to characters or numeric
+  df$light.level<-as.character(df$light.level)
+  df$genotype<-as.character(df$genotype)
+  df$dom<-as.character(df$dom)
+  df$big.tank<-as.numeric(df$big.tank)
+  df$tank<-as.numeric(df$tank)
+  df$days<-as.numeric(df$days)
 
 df %>% filter(is.na(dom)) #what frags do not have dom symb data: 134, 135, 137, 195
-# remove them and then add them back in in a few lines
-df<-df %>% filter(!is.na(dom))
-
-# if missing T0 data add back in with metadata
-# add meta to T0s without it
- #If days has NA, change to dates based on condition of time.point (T1 or T2)
-
-
-##### not running so doing by hand below
-# df<-df %>%
-#   mutate(genotype = case_when(
-#     is.na(genotype) & frag.id == "134" & time.point=="T0" ~ "878",
-#     is.na(genotype) & frag.id == "135" & time.point=="T0" ~ "878",
-#     is.na(genotype) & frag.id == "137" & time.point=="T0" ~ "878",
-#     is.na(genotype) & frag.id == "195" & time.point=="T0" ~ "858",
-#     TRUE ~ genotype))%>%
-#       mutate(light.level = case_when(
-#     is.na(light.level) & frag.id == "134" & time.point=="T0" ~ "Natural",
-#     is.na(light.level) & frag.id == "135" & time.point=="T0" ~ "Low Shade",
-#     is.na(light.level) & frag.id == "137" & time.point=="T0" ~ "High Shade",
-#     is.na(light.level) & frag.id == "195" & time.point=="T0" ~ "Low Shade",
-#     TRUE ~ light.level)) %>%
-#    
-#    mutate(big.tank = case_when(
-#     is.na(big.tank) & frag.id == 134 & time.point=="T0" ~ "16",
-#     is.na(big.tank) & frag.id == 135 & time.point=="T0" ~ "13",
-#     is.na(big.tank) & frag.id == 137 & time.point=="T0" ~ "17",
-#     is.na(big.tank) & frag.id == 195 & time.point=="T0" ~ "13",
-#     TRUE ~ big.tank))%>%
-#    mutate(tank = case_when(
-#     is.na(tank) & frag.id == 134 & time.point=="T0" ~ "9",
-#     is.na(tank) & frag.id == 135 & time.point=="T0" ~ "2",
-#     is.na(tank) & frag.id == 137 & time.point=="T0" ~ "26",
-#     is.na(tank) & frag.id == 195 & time.point=="T0" ~ "2",
-#     TRUE ~ tank))%>%
-#    mutate(dom = case_when(
-#     is.na(dom) & frag.id == 134 & time.point=="T0" ~ "D",
-#     is.na(dom) & frag.id == 135 & time.point=="T0" ~ "D",
-#     is.na(dom) & frag.id == 137 & time.point=="T0" ~ "D",
-#     is.na(dom) & frag.id == 195 & time.point=="T0" ~ "C",
-#     TRUE ~ dom))
+df<-df %>% filter(!is.na(dom))# remove them and then add them back in in a few lines
 
 #If days has NA, change to dates based on condition of time.point (T1 or T2)
 df<-
@@ -401,7 +289,6 @@ df<-
     TRUE ~ days
   ))
 
-
 #add rows for T0 if not already included
  df<-df %>%
    add_row(frag.id="134", days=0, time.point="T0", light.level="Natural", genotype="878", big.tank=16, tank=9, dom ="D", mortality=NA)%>%
@@ -409,15 +296,16 @@ df<-
     add_row(frag.id="137", days=0, time.point="T0", light.level="High Shade", genotype="878", big.tank=17, tank=26,  dom ="D", mortality=NA)%>%
     add_row(frag.id="195", days=0, time.point="T0", light.level="Low Shade", genotype="858", big.tank=13, tank=2, dom ="C", mortality=0)
 
-# Frags missing mortality data? yes some, but they are missing values
+# Frags missing mortality data? yes some, but they are missing values kept as NA
 df %>%
   group_by(frag.id) %>%
   filter(any(is.na(mortality))) %>%
   arrange(frag.id, time.point)
 ```
+#Final QC:
 
 ```{r}
-# Final check for duplicates
+#### Final check for duplicates
 df %>%
   count(frag.id, time.point) %>%
   arrange(-n)
@@ -427,25 +315,23 @@ df %>%
 # frag 21 at T0 was qPCR'd twice, once showing C and once D -- above, we decided other evidence showed this is a D colony, so we are dropping the C observation
 df <- df %>%
   filter(!(frag.id == 21 & time.point == "T0" & propD == 0))
-```
 
-```{r}
-# Fill in missing metadata for a couple of frags at  T2
+
+#### Fill in missing metadata for a couple of frags at  T2
 df  <- df %>% 
   group_by(frag.id) %>%
   fill(genotype, light.level, big.tank, tank, dom) %>%
   ungroup()
 
-```
-Filter frags if symb ID ambiguous
-```{r}
-# Filter out a few fragments where symbiont identity is ambiguous, e.g., 867B and 922 where the colony was categorized as D based on the majority of frags from that colony, but individual fragments weree 100%C
+
+#### Filter frags if symb ID ambiguous
+
+# Filter out a few fragments where symbiont identity is ambiguous, e.g., 867B and 922 where the colony was categorized as D based on the majority of frags from that colony, but individual fragments were 100%C
 mislabeled_D <- df %>%
   filter(dom == "D", propD < 0.5)
 
 df <- df %>%
   anti_join(mislabeled_D)
-
 ```
 
 # Save cleaned dataset to file
