@@ -248,7 +248,7 @@ mort2<-mort2 %>%
   filter(!frag.id==8)%>%
   filter(!frag.id==32)%>%
     filter(!frag.id==97)%>%
-    filter(!frag.id==1144)%>%
+    filter(!frag.id==144)%>%
     filter(!frag.id==196)%>%
     filter(!frag.id==235)%>%
     filter(!frag.id==276)
