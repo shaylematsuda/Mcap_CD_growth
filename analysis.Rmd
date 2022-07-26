@@ -11,6 +11,7 @@ library(emmeans)
 library(multcomp)
 library(broom.mixed)
 
+
 library("car") #levenes test
 library("ggplot2") #plotting
 library("plotrix") #plotting
@@ -41,12 +42,7 @@ df <- read_csv("all_data_cleaned.csv") %>%
 #   mutate(light.level = factor(light.level, levels = c("Natural", "Low Shade", "Medium Shade", "High Shade"))) %>%
 #   drop_na(light.level)
 
-# Filter out a few fragments where symbiont identity is ambiguous, e.g., 867B and 922 where the colony was categorized as D based on the majority of frags from that colony, but individual fragments weree 100%C
-mislabeled_D <- df %>%
-  filter(dom == "D", propD < 0.5)
 
-df <- df %>%
-  anti_join(mislabeled_D)
 ```
 
 # Mortality
@@ -65,9 +61,9 @@ df.mort$light.level<-as.factor(df.mort$light.level)
 
 
 #plot
-  ggplot(df.mort, aes(x = days, y = mortality, color = dom, group = frag.id)) +  # look at mort/time
+  m<-ggplot(df.mort, aes(x = days, y = mortality, color = dom, group = frag.id)) +  # look at mort/time
    facet_wrap(~light.level) + 
-    geom_line()
+    geom_line();m
 
 df.mort %>%
   pivot_wider(id_cols = c(frag.id, genotype, light.level, dom, time.point), ### ROSS getting "time point doesn't exist" errorrrrr whyyyy
