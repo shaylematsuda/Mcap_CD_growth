@@ -276,7 +276,7 @@ loggers <- map_dfr(csv_files,function(csv) {
       #col_select=c(2,3),
       col_types = "ncncccc",
       col_names = FALSE
-    ) %>% select(2,3) %>%
+    ) %>% dplyr::select(2,3) %>%
       dplyr::rename("datetime" = 1, "Temp" = 2) %>%
       mutate(
         datetime = parse_date_time(datetime,"m/d/y I:M:S p", tz="HST"),
@@ -324,6 +324,8 @@ Mcap.temp<-loggers_wide #make a copy
 Mcap.temp.meta.melt <- melt(Mcap.temp, id = c("datetime"))
 names(Mcap.temp.meta.melt)[2]<-"logger"
 names(Mcap.temp.meta.melt)[3]<-"temp"
+
+write_csv(Mcap.temp.meta.melt, path = "data/processed/temperature.csv")
 
 temp_plot<-ggplot(data=Mcap.temp.meta.melt, aes(x=datetime, y=temp, color=logger)) +
   geom_line(aes(color=logger), linetype=2, show.legend = F)+
@@ -383,6 +385,8 @@ temp_plot<-ggplot(data=Mcap.temp.meta.melt, aes(x=datetime, y=temp)) +
   ylab(expression(paste('Temperature ('*~degree*C*')'))) +
   xlab("")+
   theme(plot.title = element_text(size=20, face = "italic"));temp_plot 
+
+ggsave(temp_plot, filename = "output/temp_plot.png")
 
 
 #summary stats
