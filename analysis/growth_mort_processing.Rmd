@@ -27,23 +27,23 @@ library(lubridate)
 library(tidyverse)
 
 #load metadata
-geno.frag<-read.csv("UROP_metadata_colony.csv")
+geno.frag<-read.csv("data/metadata/UROP_metadata_colony.csv")
   geno.frag$genotype<-as.factor(as.character(geno.frag$genotype))
   geno.frag$frag.id<-as.factor(as.character(geno.frag$frag.id))
 
 #load shade levels
-shade.levels<-read.csv("shade.levels.csv")
+shade.levels<-read.csv("data/metadata/shade.levels.csv")
   shade.levels$frag.id<-as.factor(as.character(shade.levels$frag.id))
   shade.levels$treatment<-as.factor(as.character(shade.levels$treatment))
   shade.levels$light.level<-as.factor((shade.levels$light.level))
   shade.levels<-unique(shade.levels) #remove dups
 
 #load depth data
-geno.depth <- read.csv("UROP_geno_Depth.csv")
+geno.depth <- read.csv("data/metadata/UROP_geno_Depth.csv")
   geno.depth$genotype <- as.factor(as.character(geno.depth$genotype))
 
 #load tank data
-tank <- read.csv("UROP_frag_tank.csv")
+tank <- read.csv("data/metadata/UROP_frag_tank.csv")
   tank$frag.id <- as.factor(as.character(tank$frag.id))
 
 #combine
@@ -55,9 +55,9 @@ metadata<-dplyr::select(metadata, -c("treatment","tratment", "depth.m")) # cut u
 ```
 #Buoyant Weight
 ```{r}
-BW.data.T0 <-read.csv('Buoyant_weight/UROP_BW_T0_20171029.csv') 
-BW.data.T1 <-read.csv('Buoyant_weight/UROP_BW_T1_20171129.csv') 
-BW.data.T2 <-read.csv('Buoyant_weight/UROP_BW_T2_20180108.csv')
+BW.data.T0 <-read.csv('data/Buoyant_weight/UROP_BW_T0_20171029.csv') 
+BW.data.T1 <-read.csv('data/Buoyant_weight/UROP_BW_T1_20171129.csv') 
+BW.data.T2 <-read.csv('data/Buoyant_weight/UROP_BW_T2_20180108.csv')
 BW.data <- rbind(BW.data.T0, BW.data.T1, BW.data.T2) #combine
 BW.data<-merge(BW.data, metadata, by.x= "frag.id") #merge with metadata
   BW.data$frag.id<-as.factor(as.character(BW.data$frag.id))
@@ -67,7 +67,7 @@ BW.data<-merge(BW.data, metadata, by.x= "frag.id") #merge with metadata
 #HPutnam code
 
 # load data 
-CalData<-read.csv('Buoyant_weight/Bouyant_weight_calibration_curve.csv', header=T, sep=",")
+CalData<-read.csv('data/Buoyant_weight/Bouyant_weight_calibration_curve.csv', header=T, sep=",")
 #Data with Standard weights in grams in deionized water, saltwater, and the temp that they were measured at
 
 #plot relationship between temp and Standard in fresh and salt water
@@ -138,7 +138,7 @@ BW.data<-dplyr::select(BW.data, -c("mass.g","temp.c", "date")) # cut cols unneed
 # qPCR data
 ```{r}
 # Read in and tidy processed qPCR data
-qpcr <- read_csv("qPCR/qpcr_processed.csv")
+qpcr <- read_csv("data/qPCR/qpcr_processed.csv")
 
 qpcr <- qpcr %>%
   dplyr::select(frag.id, time, propD, dom = Dom, mix = Mix) %>%
@@ -236,7 +236,7 @@ df <- df %>%
 
 # Partial tissue loss (Percent scores, in 5% intervals)
 ```{r}
-mort<-read_csv("partialMortality.csv")
+mort<-read_csv("data/partialMortality.csv")
   mort$frag.id <- as.factor(as.character(mort$frag.id))
   mort <- as_tibble(mort)
   mort<-drop_na(mort)
@@ -336,6 +336,6 @@ df <- df %>%
 
 # Save cleaned dataset to file
 ```{r}
-write_csv(df, "all_data_cleaned.csv")
+write_csv(df, "data/processed/all_data_cleaned.csv")
 ```
 
