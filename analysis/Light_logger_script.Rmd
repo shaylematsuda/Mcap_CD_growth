@@ -11,13 +11,14 @@ Original script by M. Hoban
 ```{r}
 library(fs)
 library(reshape2)
+library(emmeans)
 library(lubridate)# for date parsing
 library(tidyverse)
 ```
 
 ```{r}
 #load data
-csv_files <- dir_ls("logger_files",glob="*.CSV",recurse = TRUE)
+csv_files <- dir_ls("data/light_logger_files",glob="*.CSV",recurse = TRUE)
 
 loggers <- map_dfr(csv_files,function(csv) {
   logger_id <- path_ext_remove(path_file(csv))
@@ -94,7 +95,7 @@ Mcap.light$logger_10959CAL <- Mcap.light$logger_10959 * 0.06052
 
 Mcap.light.2<- subset(Mcap.light, select = c( 1, 18:28)) #keep cols you need
 
-logger.df<-read.csv("UROP_logger_locations.csv") #read in logger tank locations
+logger.df<-read.csv("data/metadata/UROP_logger_locations.csv") #read in logger tank locations
 
 Mcap.light.2.melt<- #melt the df and then add metadata
   Mcap.light.2%>% 
@@ -179,20 +180,6 @@ light_plot<-ggplot(data=Mcap.light.2.melt.meta, aes(x=datetime, y=Light, group =
 Mcap.light.2.melt.meta <- Mcap.light.2.melt.meta %>%
   mutate(time.point = case_when(date(datetime) < "2017-11-29" ~ "T1",
                                 date(datetime) >="2017-11-29" ~ "T2"))
-
-#model testing if loggers differ within treatment
-mod<- lm(Light~Shade:Light.logger, data=Mcap.light.2.melt.meta)
-  anova(mod)
-  
-  mod<- lm(Light~Shade*datetime, data=Mcap.light.2.melt.meta)
-  anova(mod)
-  
-#add time point column 
-  mod<- lm(Light~Shade*time.point, data=Mcap.light.2.melt.meta)
-  anova(mod)
-  
-  emm <- emmeans(mod, ~ Shade*time.point)
-rbind(contrast(emm, method = "pairwise", by = "Light"), adjust = "fdr")
 ```
 
 
@@ -225,7 +212,7 @@ light_res_bytimepoint <- Mcap.light.2.melt.meta %>%
                                timepoint == FALSE ~ "T2"))
 
 # Write to file
-#write_csv(light_res_bytimepoint, path = "dli.csv")
+write_csv(light_res_bytimepoint, path = "data/processed/dli.csv")
 
 #### calculate average daily maxima
 avg_daily_maxima <- Mcap.light.2.melt.meta %>%
@@ -253,7 +240,7 @@ light_res.dli <- Mcap.light.2.melt.meta %>%
   summarise(dli = sum(Light, na.rm = T) / n() * 0.0864) # calc DLI for each logger on each day
                          
 #DLI model
-mod <- lmer(dli ~ Shade*time.point + (1|Tank), 
+mod <- lme4::lmer(dli ~ Shade*time.point + (1|Tank), 
             data = light_res.dli)
 anova(mod)
 
@@ -262,7 +249,7 @@ contrast(emm, method = "pairwise", by = "time.point")
 contrast(emm, method = "pairwise", by = "Shade")
 
 #PAR model
-mod <- lmer(Light ~ Shade*time.point + (1|Tank), 
+mod <- lme4::lmer(Light ~ Shade*time.point + (1|Tank), 
             data = Mcap.light.2.melt.meta)
 anova(mod)
 
@@ -275,7 +262,7 @@ contrast(emm, method = "pairwise", by = "Shade")
 #Temperature Loggers
 ```{r}
 #load data
-csv_files <- dir_ls("temp_logger",glob="*.csv",recurse = TRUE)
+csv_files <- dir_ls("data/temp_logger",glob="*.csv",recurse = TRUE)
 
 loggers <- map_dfr(csv_files,function(csv) {
   logger_id <- path_ext_remove(path_file(csv))
@@ -286,10 +273,10 @@ loggers <- map_dfr(csv_files,function(csv) {
      read_csv(
       csv,
       skip = 2,
-      col_select=c(2,3),
+      #col_select=c(2,3),
       col_types = "ncncccc",
       col_names = FALSE
-    ) %>%
+    ) %>% select(2,3) %>%
       dplyr::rename("datetime" = 1, "Temp" = 2) %>%
       mutate(
         datetime = parse_date_time(datetime,"m/d/y I:M:S p", tz="HST"),
