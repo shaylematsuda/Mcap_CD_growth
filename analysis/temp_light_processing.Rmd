@@ -386,7 +386,6 @@ temp_plot<-ggplot(data=Mcap.temp.meta.melt, aes(x=datetime, y=temp)) +
   xlab("")+
   theme(plot.title = element_text(size=20, face = "italic"));temp_plot 
 
-ggsave(temp_plot, filename = "output/temp_plot.png")
 
 
 #summary stats
