@@ -27,11 +27,23 @@ library(colorRamps)
 library(tidyverse)
 
 options(digits = 5)              # Modify global options - set sig figs to 5 digits
+
+# Create custom ggplot theme
+theme_custom <- function() {
+  theme_bw(base_size = 10, base_family = "Arial") %+replace%
+    theme(
+      panel.grid.major = element_blank(), 
+      panel.grid.minor = element_blank(), 
+      panel.background = element_blank(),
+      panel.border = element_rect(color = "black", fill = NA),
+      legend.background = element_rect(fill = NA, colour = NA)
+    )
+}
 ```
 
 # Load in data
 ```{r}
-df <- read_csv("all_data_cleaned.csv") %>% 
+df <- read_csv("data/processed/all_data_cleaned.csv") %>% 
   mutate(across(.cols = c(time.point, genotype, tank, dom, mix,frag.id, tank, big.tank, light.level), as.factor)) %>%
   mutate(light.level = factor(light.level, levels = c("Natural", "Low Shade", "Medium Shade", "High Shade"))) %>%
   drop_na(light.level)
@@ -65,10 +77,10 @@ df.mort <- df.mort %>%
                          light.level == "Medium Light" ~ 1.55,
                          light.level == "Low Light" ~ 0.755,
                          light.level == "Almost Darkness" ~ 0.359))
-df.mort.T2 <- filter(df.mort.noT0, time.point == "T2")
+df.mort.T2 <- filter(df.mort, time.point == "T2")
 
 #models
-mod <- glm(mortality/100 ~ dli * dom + time.point, family = "quasibinomial", data = df.mort)
+mod <- glm(mortality/100 ~ dli * dom, family = "quasibinomial", data = df.mort.T2)
 Anova(mod)
 
 res <- expand_grid(dom = c("C", "D"), dli = seq(0,4,0.1))
@@ -90,10 +102,10 @@ ggplot(data = df.mort.T2,
 
 #plot nicer
 
-ggplot(data = df.mort.T2,
-       aes(x = dli, y = mortality/100, color = dom, group = dom, fill=dom)) +
-  geom_jitter() +
-  geom_line(data = res, aes(y = pred))+
+fig2 <- ggplot(data = df.mort.T2,
+       aes(x = dli, y = mortality, color = dom, group = dom, fill=dom)) +
+  geom_jitter(alpha = 0.5) +
+  geom_line(data = res, aes(y = pred * 100))+
   scale_color_manual(values=c("deepskyblue3", "chocolate3")) +
   ylab("Percent Tissue Loss")+
   xlab("Daily Light Integral")+
@@ -103,18 +115,12 @@ ggplot(data = df.mort.T2,
         axis.line = element_line(colour = "black"))
 
 
+ggsave(fig2, filename = "output/figure2.png", width = 84, height = 84, units= "mm")
 
 ```
 
 # Growth
 ```{r}
-# Add mean daily light integrals for light treatment categories
-df <- df %>%
-  mutate(dli = case_when(light.level == "Natural" ~ 3.81,
-                         light.level == "Low Shade" ~ 1.55,
-                         light.level == "Medium Shade" ~ 0.755,
-                         light.level == "High Shade" ~ 0.359))
-  
 # Plot buoyant weight data for each frag
 ggplot(df, aes(x = days, y = Dry.Weigh.g, color = dom, group = frag.id)) +
   facet_wrap(~light.level) + 
@@ -130,13 +136,24 @@ gr<-gr %>%
   pivot_wider( names_from = time.point,
               values_from = Dry.Weigh.g) %>%
  # Calculate percent change per day during each time interval
-  mutate(grT1 = (T1 - T0)/T0/30 * 100,
-         grT2 = (T2 - T1)/T1/30 * 100) %>%
+  mutate(grT1 = (T1 - T0)* 1000/T0/31,
+         grT2 = (T2 - T1)* 1000/T1/39) %>%
   dplyr::select(-T0, -T1, -T2, T1 = grT1, T2 = grT2) %>%
   pivot_longer(cols = c(T1, T2), names_to = "time.point", values_to = "growth.rate") %>%
   drop_na(growth.rate)
 
 ##############################################
+
+# Add mean daily light integrals for light treatment categories
+dli <- read_csv("data/processed/dli.csv") %>%
+   rename(time.point = timepoint)  %>%
+   mutate(light.level = case_when(Shade == "1_cloth" ~ "Natural",
+                                  Shade == "2_cloth" ~ "Low Shade",
+                                  Shade == "3_cloth" ~ "Medium Shade",
+                                  Shade == "4_cloth" ~ "High Shade")) %>%
+   dplyr::select(light.level, time.point, dli = avg_dli)
+gr <- gr %>%
+   full_join(dli)
 
 # Plot growth rates by predictors
 ggplot(gr, aes(x = light.level, y = growth.rate)) +
@@ -159,7 +176,6 @@ nrow(grres) - nrow(grres.f)   # Filtered out 6 observations
 ##############################################
 
 # Run stats
-set.seed(30)
 mod <- lmer(growth.rate ~ dom * dli * time.point + (1|genotype/frag.id) + (1|tank), data = grres.f)
 anova(mod)
 
@@ -168,64 +184,74 @@ ggplot(augment(mod), aes(x = dli, y = .resid)) +
   geom_point()
 
 # Get model outputs
-emm <- emmeans(mod, ~ dom*dli|time.point, at = list(dli = sort(unique(df$dli))))
-rbind(contrast(emm, method = "pairwise", by = c("dli", "time.point")), adjust = "fdr")
+emm <- emmeans(mod, ~ dom*dli|time.point, at = list(dli = sort(unique(gr$dli))))
+# pairwise comparisons -- only the dli:timepoint combos that actually appear in the data
+rbind(contrast(emm, method = "pairwise", by = c("dli", "time.point"))[c(2,4,6,8,9,11,13,15)], adjust = "fdr")
 
 # Get fitted values to plot
-pred <- expand(grres.f, dom, time.point, dli = seq(0.359, 3.81, len = 101))
+pred <- tidyr::expand(grres.f, dom, time.point, dli = seq(0.331, 4.13, len = 101))
 pred$fit <- predict(mod, pred, re.form = NA)
 bootfit <- bootMer(mod, nsim = 999, FUN = function(x) predict(x, pred, re.form = NA))
 pred$lci <- apply(bootfit$t, 2, quantile, 0.05)
 pred$uci <- apply(bootfit$t, 2, quantile, 0.95)
 
 # Plot
-ggplot(pred, aes(x = dli, y = fit, color = dom)) +
-  facet_wrap(~ time.point) +
-  geom_violin(data = left_join(grres.f, df), aes(y = growth.rate, group = interaction(dom, dli)),
-              scale = "width") +
-  geom_line() +
-  geom_ribbon(aes(ymin = lci, ymax = uci), alpha = 0.2, lwd = 0) +
-  scale_shape_manual(values = c(20, 4)) +
-  coord_cartesian(ylim = c(-0.06, 0.5))
+grplot <- ggplot(grres.f, aes(x = dli, y = growth.rate, color = dom, fill = dom)) +
+  facet_wrap(~time.point) +
+  geom_violin(aes(group = interaction(dom, dli)), scale = "width", width = 0.3, alpha = 0.5) +
+  geom_line(data = pred, aes(y = fit)) +
+  geom_ribbon(data = pred, aes(y = fit, ymin = lci, ymax = uci), alpha = 0.2, lwd = 0) +
+  scale_color_manual(values=c("deepskyblue3", "chocolate3"), name = NULL) +
+  scale_fill_manual(values=c("deepskyblue3", "chocolate3"), name = NULL) +
+  theme_custom() +
+  theme(legend.position = c(0.05, 0.85)) +
+  labs(x = "Daily light integral (mol m-2 d-1)", y = "Growth rate (mg g-1 d-1)")
+
+
+# Make temperature plot
+tempdat <- read_csv("data/processed/temperature.csv") %>%
+  mutate(time.point = if_else(datetime < "2017-11-29", "T1", "T2"))
+medtemp <- tempdat %>% group_by(time.point) %>% summarise(med = median(temp, na.rm = T))
+tempplot <- ggplot(data=tempdat, aes(x=datetime, y=temp)) +
+  geom_smooth(color = "black", show.legend = F, method = "gam", formula = y ~ s(x, bs = "bs")) +
+  coord_cartesian(ylim = c(23, 27.2)) +
+  theme_custom() +
+  labs(x = "", y = "Temp. (°C)");tempplot
+
+t1tempplot <- tempplot %+% filter(tempdat, time.point == "T1") +
+  geom_hline(data = filter(medtemp, time.point == "T1"), aes(yintercept = med), linetype = 2) +
+  scale_x_datetime(breaks = as_datetime(c("2017-10-29", "2017-11-29")), date_labels = "%e-%b") +
+  theme(axis.text.x = element_text(hjust = c(0, 1)),
+        axis.title.y = element_text(size = 7))
+t2tempplot <- tempplot %+% filter(tempdat, time.point == "T2") +
+  geom_hline(data = filter(medtemp, time.point == "T2"), aes(yintercept = med), linetype = 2) +
+  scale_x_datetime(breaks = as_datetime(c("2017-11-29", "2018-01-07")), date_labels = "%e-%b") +
+  theme(axis.text.y = element_blank(), axis.title.y = element_blank(), axis.ticks.y = element_blank(),
+        axis.text.x = element_text(hjust = c(0, 1)),
+        plot.margin = margin(l = 0, r = 10, t = 5, b = 5))
+
+# Make figure with insets
+fig3 <- ggdraw(grplot) +
+  draw_plot(t1tempplot, 0.19, 0.6, 0.32, 0.3) +
+  draw_plot(t2tempplot, 0.83, 0.6, 0.3, 0.3, hjust = 1); fig3
+
+ggsave(fig3, filename = "output/figure3.png", width = 174, height = 90, units = "mm")
+ #
 
 
 
-grow_plot<-ggplot(pred, aes(x = dli, y = fit, color = dom)) +
-  geom_violin(data = left_join(grres.f, df), aes(y = growth.rate, group = interaction(dom, dli)),
-              scale = "width") +
-    scale_color_manual(values=c("deepskyblue3", "chocolate3")) +
-  geom_line() +
-  geom_ribbon(aes( ymin = lci, ymax = uci),  alpha = 0.2, lwd = 0) +
-  scale_shape_manual(values = c(20, 4)) +
-  coord_cartesian(ylim = c(-0.06, 0.5))+
-   ylab("Growth")+
-   xlab("Daily Light Integral")+
-  theme(panel.grid.major = element_blank(), 
-        panel.grid.minor = element_blank(),
-        panel.background = element_blank(), 
-        axis.line = element_line(colour = "black"))+
-    facet_wrap(~ time.point) +
-theme(legend.position = "none",
-        strip.background = element_rect(colour="black",
-                                        fill="white"));grow_plot
-
-library(cowplot)
-
-cowGrow<-ggplot(pred, aes(x = dli, y = fit, color = dom)) +
-  geom_violin(data = left_join(grres.f, df), aes(y = growth.rate, group = interaction(dom, dli)),
-              scale = "width") +
-    scale_color_manual(values=c("deepskyblue3", "chocolate3")) +
-  geom_line() +
-  geom_ribbon(aes( ymin = lci, ymax = uci),  alpha = 0.2, lwd = 0) +
-  scale_shape_manual(values = c(20, 4)) +
-  coord_cartesian(ylim = c(-0.06, 0.5))+
-   ylab("Growth")+
-   xlab("Daily Light Integral")+
-      facet_wrap(~ time.point) +
-  theme_cowplot(12);cowGrow
 
 
-plot_grid(cowGrow, temp_plot, labels = c('A', 'B'), label_size = 12, ncol=1, align = "v", axis="t",rel_widths = c(1,2))
+
+
+
+
+
+
+
+
+
+
 
 
 
