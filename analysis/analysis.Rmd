@@ -103,16 +103,13 @@ ggplot(data = df.mort.T2,
 #plot nicer
 
 fig2 <- ggplot(data = df.mort.T2,
-       aes(x = dli, y = mortality, color = dom, group = dom, fill=dom)) +
+       aes(x = dli, y = mortality, color = dom, group = dom)) +
   geom_jitter(alpha = 0.5) +
   geom_line(data = res, aes(y = pred * 100))+
-  scale_color_manual(values=c("deepskyblue3", "chocolate3")) +
-  ylab("Percent Tissue Loss")+
-  xlab("Daily Light Integral")+
-  theme(panel.grid.major = element_blank(), 
-        panel.grid.minor = element_blank(),
-        panel.background = element_blank(), 
-        axis.line = element_line(colour = "black"))
+  scale_color_manual(values=c("deepskyblue3", "chocolate3"), name = NULL) +
+  labs(y = "Percent Tissue Loss", x = "Daily light integral (mol m-2 d-1)")+
+  theme_custom() +
+  theme(legend.position = c(0.9, 0.9))
 
 
 ggsave(fig2, filename = "output/figure2.png", width = 84, height = 84, units= "mm")
@@ -236,49 +233,6 @@ fig3 <- ggdraw(grplot) +
   draw_plot(t2tempplot, 0.83, 0.6, 0.3, 0.3, hjust = 1); fig3
 
 ggsave(fig3, filename = "output/figure3.png", width = 174, height = 90, units = "mm")
- #
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-left_join(grres.f, df) %>%  
-  filter(time.point == "T2", light.level == "Natural", dom == "D") %>%
-  select(growth.rate, dom, light.level, time.point, genotype, frag.id, growth.rate, propD) %>%
-  arrange(-growth.rate)
-
-#################################
-
-# Visualize partial mortality
-# grres.f %>% 
-#   left_join(df) %>%
-#   ggplot(aes(x = dli, y = growth.rate)) +
-#   geom_jitter(aes(shape = mortality <= 20, color = mortality <= 20), alpha = 0.5) +
-#   scale_shape_manual(values = c(4, 18)) +
-#   facet_grid(time.point ~ dom)
-# 
-# 
-# # Make a MORTALITY-FILTERED dataset
-# grres.ff <- grres.f %>%
-#   left_join(df) %>%
-#   filter(mortality <= 0 & !is.na(mortality))
-  
-#############################################
 ```
 
 
