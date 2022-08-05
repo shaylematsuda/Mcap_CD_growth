@@ -67,7 +67,12 @@ df.mort.T2 <- filter(df.mort, time.point == "T2")
 mod <- glm(mortality/100 ~ dli * dom, family = "quasibinomial", data = df.mort.T2)
 car::Anova(mod)
 
-res <- expand_grid(dom = c("C", "D"), dli = seq(0,4,0.1))
+# Get model outputs
+emm <- emmeans(mod, ~ dom*dli, at = list(dli = sort(unique(df.mort.T2$dli))))
+# pairwise comparisons -- only the dli:timepoint combos that actually appear in the data
+rbind(contrast(emm, method = "pairwise", by = c("dli")), adjust = "fdr")
+
+alsres <- expand_grid(dom = c("C", "D"), dli = seq(0,4,0.1))
 res$pred <- predict(mod, res, type = "response")
 
 # Plot
