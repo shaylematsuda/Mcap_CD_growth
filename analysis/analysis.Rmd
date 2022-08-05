@@ -13,17 +13,10 @@ knitr::opts_chunk$set(echo = TRUE)
 
 library(lme4)
 library(emmeans)
-library(multcomp)
 library(broom.mixed)
-library("car") #levenes test
-library("ggplot2") #plotting
-library("plotrix") #plotting
-require("gridExtra") #Arrange Plots for output
-require("utils")
 library(lubridate)
 library(lmerTest)
-library(RColorBrewer)
-library(colorRamps)
+library(cowplot)
 library(tidyverse)
 
 options(digits = 5)              # Modify global options - set sig figs to 5 digits
@@ -43,65 +36,42 @@ theme_custom <- function() {
 
 # Load in data
 ```{r}
+# Load buoyant weight and tissue loss data
 df <- read_csv("data/processed/all_data_cleaned.csv") %>% 
   mutate(across(.cols = c(time.point, genotype, tank, dom, mix,frag.id, tank, big.tank, light.level), as.factor)) %>%
   mutate(light.level = factor(light.level, levels = c("Natural", "Low Shade", "Medium Shade", "High Shade"))) %>%
   drop_na(light.level)
+
+# Load light data
+dli <- read_csv("data/processed/dli.csv") %>%
+   rename(time.point = timepoint)  %>%
+   mutate(light.level = case_when(Shade == "1_cloth" ~ "Natural",
+                                  Shade == "2_cloth" ~ "Low Shade",
+                                  Shade == "3_cloth" ~ "Medium Shade",
+                                  Shade == "4_cloth" ~ "High Shade")) %>%
+   dplyr::select(light.level, time.point, dli = avg_dli)
 ```
 
 # Partial tissue loss
 ```{r}
-df.mort<-df #make a copy
-  df.mort$time.point<-as.factor(df.mort$time.point)
-  df.mort$big.tank<-as.factor(df.mort$big.tank)
-  df.mort$tank<-as.factor(df.mort$tank)
-  df.mort$dom<-as.factor(df.mort$dom)
-  df.mort$light.level<-as.character(df.mort$light.level)
-  df.mort$light.level[df.mort$light.level == "Natural"] <- "High Light"
-  df.mort$light.level[df.mort$light.level == "Low Shade"] <- "Medium Light"
-  df.mort$light.level[df.mort$light.level == "Medium Shade"] <- "Low Light"
-  df.mort$light.level[df.mort$light.level == "High Shade"] <- "Almost Darkness"
-  df.mort$light.level<-as.factor(df.mort$light.level)
+df.mort <- df %>%    # make a copy
+  left_join(dli)     # join with light data
 
-#plot individual tissue loss
-  m<-ggplot(df.mort, aes(x = days, y = mortality, color = dom, group = frag.id)) +  # look at mort/time
-   facet_wrap(~light.level) + 
-    geom_line();m
+# Plot individual tissue loss to look at mort/time
+ggplot(df.mort, aes(x = days, y = mortality, color = dom, group = frag.id)) +  
+  facet_wrap(~light.level) + 
+  geom_line()
 
-# boxplot C v D:facet by shade treatment #####
-df.mort$light.level <- factor(df.mort$light.level, levels=c("Almost Darkness", "Low Light",  "Medium Light","High Light")) #reorder factors
-df.mort$time.point <- factor(df.mort$time.point, levels=c("T0", "T1", "T2")) #reorder factors
-
-df.mort <- df.mort %>%
-  mutate(dli = case_when(light.level == "High Light" ~ 3.81,
-                         light.level == "Medium Light" ~ 1.55,
-                         light.level == "Low Light" ~ 0.755,
-                         light.level == "Almost Darkness" ~ 0.359))
+# Fit glm
 df.mort.T2 <- filter(df.mort, time.point == "T2")
-
-#models
 mod <- glm(mortality/100 ~ dli * dom, family = "quasibinomial", data = df.mort.T2)
-Anova(mod)
+car::Anova(mod)
 
 res <- expand_grid(dom = c("C", "D"), dli = seq(0,4,0.1))
 res$pred <- predict(mod, res, type = "response")
 
-df.mort.T2 %>%
-  filter(dom == "D", light.level == "High Light") %>% arrange(-mortality)
-
-df.mort %>%
-  count(light.level, time.point, dom) %>%
-  arrange(light.level, dom, time.point) %>%
-  print(n = nrow(.)) 
-
-#plot  
-ggplot(data = df.mort.T2,
-       aes(x = dli, y = mortality/100, color = dom, group = dom, fill=dom)) +
-  geom_jitter() +
-  geom_line(data = res, aes(y = pred))
-
-#plot nicer
-
+# Plot
+set.seed(36)
 fig2 <- ggplot(data = df.mort.T2,
        aes(x = dli, y = mortality, color = dom, group = dom)) +
   geom_jitter(alpha = 0.5) +
@@ -111,9 +81,7 @@ fig2 <- ggplot(data = df.mort.T2,
   theme_custom() +
   theme(legend.position = c(0.9, 0.9))
 
-
 ggsave(fig2, filename = "output/figure2.png", width = 84, height = 84, units= "mm")
-
 ```
 
 # Growth
@@ -124,13 +92,11 @@ ggplot(df, aes(x = days, y = Dry.Weigh.g, color = dom, group = frag.id)) +
   geom_line()
 
 # Calculate growth rates
-gr<-df # make a copy
+gr <- df %>% # make a copy
+  dplyr::select(-c("days","notes","mix", "propD","mortality"))   #remove cols not needed
 
-#remove cols not needed
-gr<-dplyr::select(gr, -c("days","notes","mix", "propD","mortality")) 
-
-gr<-gr %>%
-  pivot_wider( names_from = time.point,
+gr <- gr %>%
+  pivot_wider(names_from  = time.point,
               values_from = Dry.Weigh.g) %>%
  # Calculate percent change per day during each time interval
   mutate(grT1 = (T1 - T0)* 1000/T0/31,
@@ -142,13 +108,6 @@ gr<-gr %>%
 ##############################################
 
 # Add mean daily light integrals for light treatment categories
-dli <- read_csv("data/processed/dli.csv") %>%
-   rename(time.point = timepoint)  %>%
-   mutate(light.level = case_when(Shade == "1_cloth" ~ "Natural",
-                                  Shade == "2_cloth" ~ "Low Shade",
-                                  Shade == "3_cloth" ~ "Medium Shade",
-                                  Shade == "4_cloth" ~ "High Shade")) %>%
-   dplyr::select(light.level, time.point, dli = avg_dli)
 gr <- gr %>%
    full_join(dli)
 
@@ -175,10 +134,6 @@ nrow(grres) - nrow(grres.f)   # Filtered out 6 observations
 # Run stats
 mod <- lmer(growth.rate ~ dom * dli * time.point + (1|genotype/frag.id) + (1|tank), data = grres.f)
 anova(mod)
-
-hist(resid(mod))
-ggplot(augment(mod), aes(x = dli, y = .resid)) +
-  geom_point()
 
 # Get model outputs
 emm <- emmeans(mod, ~ dom*dli|time.point, at = list(dli = sort(unique(gr$dli))))
