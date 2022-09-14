@@ -430,7 +430,7 @@ Mcap.temp.T2 <- Mcap.temp.meta.melt %>%
 
 #mean of T1-T2
 Mcap.temp.T2 %>%
-  #group_by(logger) %>%                                          # group by shade treatment
+  #group_by(logger) %>%                                         
   summarise(meantemp = mean(temp, na.rm=T), sd=sd(temp, na.rm=T))  
 
 ```
