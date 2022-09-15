@@ -89,7 +89,7 @@ fig1 <- ggplot(data = df.mort.T2,
 
 ggsave(fig1, filename = "output/figure2.png", width = 84, height = 84, units= "mm")
 
-####original
+####original fig
 fig2 <- ggplot(data = df.mort.T2,
        aes(x = dli, y = mortality, color = dom, group = dom)) +
   geom_jitter(alpha = 0.5) +

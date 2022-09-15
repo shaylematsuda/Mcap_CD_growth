@@ -435,3 +435,38 @@ Mcap.temp.T2 %>%
 
 ```
 
+#NOAA BUOY DATA Station MOKH1
+```{r}
+#https://www.tidyverse.org/blog/2021/03/clock-0-1-0/
+library(clock)
+library(tidyverse)
+library(lubridate)
+
+mok<-read.csv("MOK1_data.csv")
+as_tibble(mok)
+
+mok2 <- mok %>%
+  mutate(
+    date = date_build(year,month,day), 
+    .keep = "unused", 
+    .before = 1
+  )
+
+#remove any temp over 40C bc impossible (NAs as 999s in NOAA data)
+mok2<- subset(mok2, degC<40)
+
+#average per month
+mok3<-mok2 %>%
+  mutate(date = date_group(date, "month")) %>%
+  group_by(date) %>%
+  summarise(avg_temp = mean(degC, na.rm = TRUE), .groups = "drop")
+#pull out month
+mok4<-mutate(mok3, month = get_month(date))
+mok4<-mok4%>%select(month, avg_temp)
+#ave per month
+mok5<-mok4 %>%
+  group_by(month) %>%
+  summarise(avg_temp = mean(avg_temp, na.rm = TRUE), .groups = "drop")
+
+```
+
