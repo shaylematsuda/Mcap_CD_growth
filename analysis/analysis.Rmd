@@ -85,12 +85,14 @@ fig1 <- ggplot(data = df.mort.T2,
   scale_color_manual(values=c("deepskyblue3", "chocolate3"), name = NULL) +
   labs(y = "Percent Tissue Loss", x = "Daily light integral (mol m-2 d-1)")+
   theme_custom() +
-  theme(legend.position = c(0.9, 0.9));fig1
+  theme(legend.position = "none")+
+   xlab(expression(Daily~light~integral~(mol~m^-2~d^-1)))+
+  ylab(Percent~tissue~loss);fig1
 
-ggsave(fig1, filename = "output/figure2.png", width = 84, height = 84, units= "mm")
+ggsave(fig1, filename = "output/figure1.tiff", width = 84, height = 84, units= "mm")
 
 ####original fig
-fig2 <- ggplot(data = df.mort.T2,
+fig1 <- ggplot(data = df.mort.T2,
        aes(x = dli, y = mortality, color = dom, group = dom)) +
   geom_jitter(alpha = 0.5) +
   geom_line(data = res, aes(y = pred * 100))+
@@ -164,6 +166,7 @@ pred$lci <- apply(bootfit$t, 2, quantile, 0.05)
 pred$uci <- apply(bootfit$t, 2, quantile, 0.95)
 
 # Plot
+
 grplot <- ggplot(grres.f, aes(x = dli, y = growth.rate, color = dom, fill = dom)) +
   facet_wrap(~time.point) +
   geom_violin(aes(group = interaction(dom, dli)), scale = "width", width = 0.3, alpha = 0.5) +
@@ -173,7 +176,8 @@ grplot <- ggplot(grres.f, aes(x = dli, y = growth.rate, color = dom, fill = dom)
   scale_fill_manual(values=c("deepskyblue3", "chocolate3"), name = NULL) +
   theme_custom() +
   theme(legend.position = c(0.05, 0.85)) +
-  labs(x = "Daily light integral (mol m-2 d-1)", y = "Growth rate (mg g-1 d-1)")
+  xlab(expression(Daily~light~integral~(mol~m^-2~d^-1)))+
+  ylab(expression(Growth~rate~(mg~g^-1~d^-1)));grplot
 
 
 # Make temperature plot
@@ -199,11 +203,11 @@ t2tempplot <- tempplot %+% filter(tempdat, time.point == "T2") +
         plot.margin = margin(l = 0, r = 10, t = 5, b = 5))
 
 # Make figure with insets
-fig3 <- ggdraw(grplot) +
+fig2 <- ggdraw(grplot) +
   draw_plot(t1tempplot, 0.19, 0.6, 0.32, 0.3) +
-  draw_plot(t2tempplot, 0.83, 0.6, 0.3, 0.3, hjust = 1); fig3
+  draw_plot(t2tempplot, 0.83, 0.6, 0.3, 0.3, hjust = 1); fig2
 
-ggsave(fig3, filename = "output/figure3.png", width = 174, height = 90, units = "mm")
+ggsave(fig2, filename = "output/figure2.tiff", width = 174, height = 90, units = "mm")
 ```
 
 
