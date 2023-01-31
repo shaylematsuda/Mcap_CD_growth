@@ -12,6 +12,7 @@ Shayle Matsuda, Mariah Opalek, Raphael Ritson-Williams, Ruth Gates, Ross Cunning
 knitr::opts_chunk$set(echo = TRUE)
 
 library(lme4)
+library(ggplot2)
 library(emmeans)
 library(broom.mixed)
 library(lubridate)
@@ -32,6 +33,29 @@ theme_custom <- function() {
       legend.background = element_rect(fill = NA, colour = NA)
     )
 }
+```
+one of these packages needed for qqplot figure out which and then delete
+```{r}
+library(plyr)
+library(dplyr)
+library(ggplot2)
+library(ggpubr)
+library(lmerTest)
+library(car)
+library(emmeans)
+library(gridExtra)
+library(multcomp)
+library(reshape)
+library(tidyverse)
+library(factoextra)
+library(reshape2)
+library(vegan)
+library(pairwiseAdonis)
+library("scales")
+packageVersion("scales")
+library(RColorBrewer)
+library(colorRamps)
+library(devtools)s
 ```
 
 # Load in data
@@ -101,6 +125,215 @@ fig1 <- ggplot(data = df.mort.T2,
   theme_custom() +
   theme(legend.position = c(0.9, 0.9))
 ```
+#Revision.1 mortality same but simple linear model
+```{r}
+df.mort.T2 #use T2 df
+df.mort.T2$light.level<-as.factor(df.mort.T2$light.level)
+
+# using Light Level NOT dli: residuals not amazing 
+mod<-lmer(mortality~light.level*dom+(1|genotype), df.mort.T2)
+anova(mod)
+qqPlot(residuals(mod)) #doesn't look amazing
+  emm<-emmeans(mod,  ~ light.level|dom, adjust="Tukey") #high light different
+  cld(emm)
+  pairs(emm)  #C dom: High diff from all, D dom: high diff from all.
+   emm<-emmeans(mod,  ~dom|light.level, adjust="Tukey") #high light different
+  cld(emm)
+  pairs(emm)  # C is diff from D at all light levels except High light. 
+
+#try log transforming
+  df.mort.T2$mortality_log<-log10( df.mort.T2$mortality+1)
+
+mod<-lmer(mortality_log~light.level*dom+(1|genotype), df.mort.T2)
+anova(mod)
+qqPlot(residuals(mod)) #looks better
+#Below same same
+  emm<-emmeans(mod,  ~ light.level|dom, adjust="Tukey") #high light different
+  cld(emm)
+  pairs(emm)  #C dom: High diff from all, D dom: high diff from all.
+   emm<-emmeans(mod,  ~dom|light.level, adjust="Tukey") #high light different
+  cld(emm)
+  pairs(emm)  # C is diff from D at all light levels except High light. 
+  
+  
+# again but with dli and not factor light
+  
+  # using Light Level NOT dli: residuals not amazing 
+mod<-lmer(mortality~dli*dom+(1|genotype), df.mort.T2)
+anova(mod)
+qqPlot(residuals(mod)) #doesn't look amazing
+ 
+
+#try transforming - this also works better for residuals. 
+  df.mort.T2$mortality_log<-log10( df.mort.T2$mortality+1)
+
+mod<-lmer(mortality_log~light.level*dom+(1|genotype), df.mort.T2)
+anova(mod)
+qqPlot(residuals(mod)) #looks better
+#Below same same
+  emm<-emmeans(mod,  ~ light.level|dom, adjust="Tukey") #high light different
+  cld(emm)
+  pairs(emm)  #C dom: High diff from all, D dom: high diff from all.
+   emm<-emmeans(mod,  ~dom|light.level, adjust="Tukey") #high light different
+  cld(emm)
+  pairs(emm)  # C is diff from D at all light levels except High light. 
+```
+#Revision.1 mortality binned into percent groups
+```{r}
+df.mort.T2.bin<-read.csv("df.mort.T2.bins.csv")
+
+df.mort.T2.bin$mort.bin<-as.factor(df.mort.T2.bin$mort.bin)
+
+# using Light Level NOT dli: If response variable is FACTOR can't run this model
+mod<-glm(mort.bin~dli*dom, family=data, df.mort.T2.bin)
+anova(mod)
+qqPlot(residuals(mod)) #
+  emm<-emmeans(mod,  ~ light.level|dom, adjust="Tukey") 
+  cld(emm)
+  pairs(emm)  #
+   emm<-emmeans(mod,  ~dom|light.level, adjust="Tukey") #
+  cld(emm)
+  pairs(emm)  #
+
+
+
+
+
+```
+
+#Revision.1 mortality only top 2 light treatments
+None of this looks good, residuals are terrible. Likely need a stronger transformation 
+```{r}
+#df df.mort.T2
+
+df.mort.T2.Nat.1shade<-subset(df.mort.T2, light.level=="Natural"|light.level=="Low Shade")
+
+# using Light Level NOT dli: residuals not amazing 
+mod<-lmer(mortality~light.level*dom+(1|genotype), df.mort.T2.Nat.1shade)
+anova(mod)
+qqPlot(residuals(mod)) #TERRIBLE
+  emm<-emmeans(mod,  ~ light.level|dom, adjust="Tukey") #high light different
+  cld(emm)
+  pairs(emm)  #C dom: High diff from all, D dom: high diff from all.
+   emm<-emmeans(mod,  ~dom|light.level, adjust="Tukey") #high light different
+  cld(emm)
+  pairs(emm)  # C is diff from D at all light levels except High light. 
+
+#try log transforming
+mod<-lmer(mortality_log~light.level*dom+(1|genotype), df.mort.T2.Nat.1shade)
+anova(mod)
+qqPlot(residuals(mod)) #awful
+
+#try a stronger transform
+df.mort.T2.Nat.1shade$mortality_quart<-df.mort.T2.Nat.1shade$mortality^(1/4)
+mod<-lmer(mortality_quart~light.level*dom+(1|genotype), df.mort.T2.Nat.1shade)
+anova(mod)
+qqPlot(residuals(mod)) #awful
+
+
+# again but with dli and not factor light
+  
+  # using Light Level NOT dli: residuals not amazing 
+mod<-lmer(mortality~dli*dom+(1|genotype), df.mort.T2.Nat.1shade)
+anova(mod)
+qqPlot(residuals(mod)) #Terrible
+ 
+
+#try transforming - this also works better for residuals. 
+  df.mort.T2.Nat.1shade$mortality_log<-log10(df.mort.T2.Nat.1shade$mortality+1)
+
+mod<-lmer(mortality_log~light.level*dom+(1|genotype), df.mort.T2.Nat.1shade)
+anova(mod)
+qqPlot(residuals(mod)) #terrible
+
+
+
+
+
+
+```
+
+
+#Revision.1 mortality only  3 light treatments (combine dark ones)
+```{r}
+#df df.mort.T2.bins.3treat.csv
+
+df.mort.T2.Nat.1shade<-read.csv("df.mort.T2.bins.3treat.csv")
+
+# using Light Level NOT dli: residuals not amazing 
+mod<-lmer(mortality~light.level*dom+(1|genotype), df.mort.T2.Nat.1shade)
+anova(mod)
+qqPlot(residuals(mod)) #TERRIBLE
+  emm<-emmeans(mod,  ~ light.level|dom, adjust="Tukey") #high light different
+  cld(emm)
+  pairs(emm)  #C dom: High diff from all, D dom: high diff from all.
+   emm<-emmeans(mod,  ~dom|light.level, adjust="Tukey") #high light different
+  cld(emm)
+  pairs(emm)  # C is diff from D at all light levels except High light. 
+
+#try log transforming
+mod<-lmer(mortality_log~light.level*dom+(1|genotype), df.mort.T2.Nat.1shade)
+anova(mod)
+qqPlot(residuals(mod)) #awful
+
+#try a stronger transform
+df.mort.T2.Nat.1shade$mortality_quart<-df.mort.T2.Nat.1shade$mortality^(1/4)
+mod<-lmer(mortality_quart~light.level*dom+(1|genotype), df.mort.T2.Nat.1shade)
+anova(mod)
+qqPlot(residuals(mod)) #awful
+
+
+# again but with dli and not factor light
+  
+  # using Light Level NOT dli: residuals not amazing 
+mod<-lmer(mortality~dli*dom+(1|genotype), df.mort.T2.Nat.1shade)
+anova(mod)
+qqPlot(residuals(mod)) #Terrible
+ 
+
+#try transforming - this also works better for residuals. 
+  df.mort.T2.Nat.1shade$mortality_log<-log10(df.mort.T2.Nat.1shade$mortality+1)
+
+mod<-lmer(mortality_log~light.level*dom+(1|genotype), df.mort.T2.Nat.1shade)
+anova(mod)
+qqPlot(residuals(mod)) #terrible
+
+
+
+
+
+
+```
+
+
+
+
+
+
+#Revision.1 mortality, try combining two lowest light treatments -Residuals look terrible
+```{r}
+df.mort.T2.bins.3treat<-read.csv("df.mort.T2.bins.3treat.csv")
+
+hist(df.mort.T2.Nat.1shade$mortality_log) <- need a very diff transform
+
+# using Light Level NOT dli: residuals not amazing 
+mod<-lmer(mortality_log~light.level*dom+(1|genotype), df.mort.T2.bins.3treat)
+anova(mod)
+qqPlot(residuals(mod)) #TERRIBLE
+  emm<-emmeans(mod,  ~ light.level|dom, adjust="Tukey") 
+  cld(emm)
+  pairs(emm)  #.
+   emm<-emmeans(mod,  ~dom|light.level, adjust="Tukey") #
+  cld(emm)
+  pairs(emm)  # 
+
+  df.mort.T2.bins.3treat$mortality.log<-log10(df.mort.T2.bins.3treat$mortality+1)
+mod<-lmer(mortality.log~light.level*dom+(1|genotype), df.mort.T2.bins.3treat)
+anova(mod)
+qqPlot(residuals(mod)) #better, usable
+
+```
+
 
 # Growth
 ```{r}
@@ -210,4 +443,148 @@ fig2 <- ggdraw(grplot) +
 ggsave(fig2, filename = "output/figure2.tiff", width = 174, height = 90, units = "mm")
 ```
 
+#growth Revisions.1 
+Just Natural and Low Shade --> THIS does not have a significant 3-way. 
+```{r}
+grres.f.TOP2Shade<-grres.f
+grres.f.TOP2Shade<-subset(grres.f.TOP2Shade, light.level=="Natural"|light.level=="Low Shade")
 
+
+
+# Run stats
+mod <- lmer(growth.rate ~ dom * dli * time.point + (1|genotype/frag.id) + (1|tank), data = grres.f.TOP2Shade)
+anova(mod) #3-way interaction NOT significant now...
+hist(residuals(mod)) #great...
+
+# Get model outputs
+emm <- emmeans(mod, ~ dom*dli|time.point, at = list(dli = sort(unique(gr$dli))))
+# pairwise comparisons -- only the dli:timepoint combos that actually appear in the data
+rbind(contrast(emm, method = "pairwise", by = c("dli", "time.point"))[c(2,4,6,8,9,11,13,15)], adjust = "fdr")
+
+# Get fitted values to plot
+pred <- tidyr::expand(grres.f.TOP2Shade, dom, time.point, dli = seq(0.331, 4.13, len = 101))
+pred$fit <- predict(mod, pred, re.form = NA)
+bootfit <- bootMer(mod, nsim = 999, FUN = function(x) predict(x, pred, re.form = NA))
+pred$lci <- apply(bootfit$t, 2, quantile, 0.05)
+pred$uci <- apply(bootfit$t, 2, quantile, 0.95)
+
+# Plot
+
+grplot <- ggplot(grres.f.TOP2Shade, aes(x = dli, y = growth.rate, color = dom, fill = dom)) +
+  facet_wrap(~time.point) +
+  geom_violin(aes(group = interaction(dom, dli)), scale = "width", width = 0.3, alpha = 0.5) +
+  geom_line(data = pred, aes(y = fit)) +
+  geom_ribbon(data = pred, aes(y = fit, ymin = lci, ymax = uci), alpha = 0.2, lwd = 0) +
+  scale_color_manual(values=c("deepskyblue3", "chocolate3"), name = NULL) +
+  scale_fill_manual(values=c("deepskyblue3", "chocolate3"), name = NULL) +
+  theme_custom() +
+  theme(legend.position = c(0.05, 0.85)) +
+  xlab(expression(Daily~light~integral~(mol~m^-2~d^-1)))+
+  ylab(expression(Growth~rate~(mg~g^-1~d^-1)));grplot
+
+
+# Make temperature plot
+tempdat <- read_csv("data/processed/temperature.csv") %>%
+  mutate(time.point = if_else(datetime < "2017-11-29", "T1", "T2"))
+medtemp <- tempdat %>% group_by(time.point) %>% summarise(med = median(temp, na.rm = T))
+tempplot <- ggplot(data=tempdat, aes(x=datetime, y=temp)) +
+  geom_smooth(color = "black", show.legend = F, method = "gam", formula = y ~ s(x, bs = "bs")) +
+  coord_cartesian(ylim = c(23, 27.2)) +
+  theme_custom() +
+  labs(x = "", y = "Temp. (°C)");tempplot
+
+t1tempplot <- tempplot %+% filter(tempdat, time.point == "T1") +
+  geom_hline(data = filter(medtemp, time.point == "T1"), aes(yintercept = med), linetype = 2) +
+  scale_x_datetime(breaks = as_datetime(c("2017-10-29", "2017-11-29")), date_labels = "%e-%b") +
+  theme(axis.text.x = element_text(hjust = c(0, 1)),
+        axis.title.y = element_text(size = 7))
+t2tempplot <- tempplot %+% filter(tempdat, time.point == "T2") +
+  geom_hline(data = filter(medtemp, time.point == "T2"), aes(yintercept = med), linetype = 2) +
+  scale_x_datetime(breaks = as_datetime(c("2017-11-29", "2018-01-07")), date_labels = "%e-%b") +
+  theme(axis.text.y = element_blank(), axis.title.y = element_blank(), axis.ticks.y = element_blank(),
+        axis.text.x = element_text(hjust = c(0, 1)),
+        plot.margin = margin(l = 0, r = 10, t = 5, b = 5))
+
+# Make figure with insets
+fig2 <- ggdraw(grplot) +
+  draw_plot(t1tempplot, 0.19, 0.6, 0.32, 0.3) +
+  draw_plot(t2tempplot, 0.83, 0.6, 0.3, 0.3, hjust = 1); fig2
+
+ggsave(fig2, filename = "output/figure2.tiff", width = 174, height = 90, units = "mm")
+```
+ Natural, Low Shade, Lowest (combined high and medium) -> This has the significant 3-way, need dark treatment USE
+```{r}
+grres.f.TOP2Shade<-grres.f
+#write.csv(grres.f.TOP2Shade,"grres.f.TOP2Shade.csv") #sorry ross, did this manually. Combine 2 darkest treatments, dli is the average fo the 2.
+grres.f.TOP2Shade<-read.csv("grres.f.TOP2Shade.csv")
+# 
+# grres.f.TOP2Shade<-subset(grres.f.TOP2Shade, light.level=="Natural"|light.level=="Low Shade")
+# 
+# grres.f.LOW2shade<-subset(grres.f.TOP2Shade, light.level=="High Shade"|light.level=="Medium Shade")
+# grres.f.LOW2shade$light.level<-"High Shade"
+
+#combine
+#grres.f.test<-rbind(grres.f.TOP2Shade,grres.f.LOW2shade)
+
+
+# Run stats
+mod <- lmer(growth.rate ~ dom * dli * time.point + (1|genotype/frag.id) + (1|tank), data = grres.f.TOP2Shade)
+anova(mod) #3-way interaction sig
+hist(residuals(mod)) #
+
+# Get model outputs
+emm <- emmeans(mod, ~ dom*dli|time.point, at = list(dli = sort(unique(gr$dli))))
+# pairwise comparisons -- only the dli:timepoint combos that actually appear in the data
+rbind(contrast(emm, method = "pairwise", by = c("dli", "time.point"))[c(2,4,6,8,9,11,13,15)], adjust = "fdr")
+
+# Get fitted values to plot
+pred <- tidyr::expand(grres.f.TOP2Shade, dom, time.point, dli = seq(0.331, 4.13, len = 101))
+pred$fit <- predict(mod, pred, re.form = NA)
+bootfit <- bootMer(mod, nsim = 999, FUN = function(x) predict(x, pred, re.form = NA))
+pred$lci <- apply(bootfit$t, 2, quantile, 0.05)
+pred$uci <- apply(bootfit$t, 2, quantile, 0.95)
+
+# Plot
+
+grplot <- ggplot(grres.f.TOP2Shade, aes(x = dli, y = growth.rate, color = dom, fill = dom)) +
+  facet_wrap(~time.point) +
+  geom_violin(aes(group = interaction(dom, dli)), scale = "width", width = 0.3, alpha = 0.5) +
+  geom_line(data = pred, aes(y = fit)) +
+  geom_ribbon(data = pred, aes(y = fit, ymin = lci, ymax = uci), alpha = 0.2, lwd = 0) +
+  scale_color_manual(values=c("deepskyblue3", "chocolate3"), name = NULL) +
+  scale_fill_manual(values=c("deepskyblue3", "chocolate3"), name = NULL) +
+  theme_custom() +
+  theme(legend.position = c(0.05, 0.85)) +
+  xlab(expression(Daily~light~integral~(mol~m^-2~d^-1)))+
+  ylab(expression(Growth~rate~(mg~g^-1~d^-1)));grplot
+
+
+# Make temperature plot
+tempdat <- read_csv("data/processed/temperature.csv") %>%
+  mutate(time.point = if_else(datetime < "2017-11-29", "T1", "T2"))
+medtemp <- tempdat %>% group_by(time.point) %>% summarise(med = median(temp, na.rm = T))
+tempplot <- ggplot(data=tempdat, aes(x=datetime, y=temp)) +
+  geom_smooth(color = "black", show.legend = F, method = "gam", formula = y ~ s(x, bs = "bs")) +
+  coord_cartesian(ylim = c(23, 27.2)) +
+  theme_custom() +
+  labs(x = "", y = "Temp. (°C)");tempplot
+
+t1tempplot <- tempplot %+% filter(tempdat, time.point == "T1") +
+  geom_hline(data = filter(medtemp, time.point == "T1"), aes(yintercept = med), linetype = 2) +
+  scale_x_datetime(breaks = as_datetime(c("2017-10-29", "2017-11-29")), date_labels = "%e-%b") +
+  theme(axis.text.x = element_text(hjust = c(0, 1)),
+        axis.title.y = element_text(size = 7))
+t2tempplot <- tempplot %+% filter(tempdat, time.point == "T2") +
+  geom_hline(data = filter(medtemp, time.point == "T2"), aes(yintercept = med), linetype = 2) +
+  scale_x_datetime(breaks = as_datetime(c("2017-11-29", "2018-01-07")), date_labels = "%e-%b") +
+  theme(axis.text.y = element_blank(), axis.title.y = element_blank(), axis.ticks.y = element_blank(),
+        axis.text.x = element_text(hjust = c(0, 1)),
+        plot.margin = margin(l = 0, r = 10, t = 5, b = 5))
+
+# Make figure with insets
+fig2 <- ggdraw(grplot) +
+  draw_plot(t1tempplot, 0.19, 0.6, 0.32, 0.3) +
+  draw_plot(t2tempplot, 0.83, 0.6, 0.3, 0.3, hjust = 1); fig2
+
+ggsave(fig2, filename = "output/NEWfigure2.tiff", width = 174, height = 90, units = "mm")
+```
