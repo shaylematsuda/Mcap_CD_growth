@@ -18,6 +18,7 @@ library(broom.mixed)
 library(lubridate)
 library(lmerTest)
 library(cowplot)
+library(EnvStats)
 library(tidyverse)
 
 options(digits = 5)              # Modify global options - set sig figs to 5 digits
@@ -155,30 +156,29 @@ qqPlot(residuals(mod)) #looks better
   cld(emm)
   pairs(emm)  # C is diff from D at all light levels except High light. 
   
-  
-# again but with dli and not factor light
-  
-  # using Light Level NOT dli: residuals not amazing 
+# again but with dli and not  light level
 mod<-lmer(mortality~dli*dom+(1|genotype), df.mort.T2)
 anova(mod)
 qqPlot(residuals(mod)) #doesn't look amazing
- 
 
-#try transforming - this also works better for residuals. 
-  df.mort.T2$mortality_log<-log10( df.mort.T2$mortality+1)
+#log transform
+df.mort.T2$mortality_log<-log10( df.mort.T2$mortality+1)
 
-mod<-lmer(mortality_log~light.level*dom+(1|genotype), df.mort.T2)
+mod<-lmer(mortality_log~dli*dom+(1|genotype), df.mort.T2)
 anova(mod)
 qqPlot(residuals(mod)) #looks better
-#Below same same
-  emm<-emmeans(mod,  ~ light.level|dom, adjust="Tukey") #high light different
+
+#not working with dli as numeric. 
+  emm<-emmeans(mod,  ~ dli|dom, adjust="Tukey") #high light different
   cld(emm)
   pairs(emm)  #C dom: High diff from all, D dom: high diff from all.
-   emm<-emmeans(mod,  ~dom|light.level, adjust="Tukey") #high light different
+   emm<-emmeans(mod,  ~dom|dli, adjust="Tukey") #high light different
   cld(emm)
   pairs(emm)  # C is diff from D at all light levels except High light. 
+
+
 ```
-#Revision.1 mortality binned into percent groups
+#Revision.1 mortality binned into percent groups - how to run this
 ```{r}
 df.mort.T2.bin<-read.csv("df.mort.T2.bins.csv")
 
@@ -229,8 +229,6 @@ df.mort.T2.Nat.1shade$mortality_quart<-df.mort.T2.Nat.1shade$mortality^(1/4)
 mod<-lmer(mortality_quart~light.level*dom+(1|genotype), df.mort.T2.Nat.1shade)
 anova(mod)
 qqPlot(residuals(mod)) #awful
-
-
 # again but with dli and not factor light
   
   # using Light Level NOT dli: residuals not amazing 
@@ -239,7 +237,7 @@ anova(mod)
 qqPlot(residuals(mod)) #Terrible
  
 
-#try transforming - this also works better for residuals. 
+#try transforming -
   df.mort.T2.Nat.1shade$mortality_log<-log10(df.mort.T2.Nat.1shade$mortality+1)
 
 mod<-lmer(mortality_log~light.level*dom+(1|genotype), df.mort.T2.Nat.1shade)
@@ -254,7 +252,7 @@ qqPlot(residuals(mod)) #terrible
 ```
 
 
-#Revision.1 mortality only  3 light treatments (combine dark ones)
+#Revision.1 mortality only  3 light treatments (combine dark ones) I THINK THIS IS THE WAY
 ```{r}
 #df df.mort.T2.bins.3treat.csv
 
@@ -271,7 +269,7 @@ qqPlot(residuals(mod)) #TERRIBLE
   cld(emm)
   pairs(emm)  # C is diff from D at all light levels except High light. 
 
-#try log transforming
+#try log transforming 
 mod<-lmer(mortality_log~light.level*dom+(1|genotype), df.mort.T2.Nat.1shade)
 anova(mod)
 qqPlot(residuals(mod)) #awful
@@ -280,12 +278,12 @@ qqPlot(residuals(mod)) #awful
 df.mort.T2.Nat.1shade$mortality_quart<-df.mort.T2.Nat.1shade$mortality^(1/4)
 mod<-lmer(mortality_quart~light.level*dom+(1|genotype), df.mort.T2.Nat.1shade)
 anova(mod)
-qqPlot(residuals(mod)) #awful
+qqPlot(residuals(mod)) #good
 
 
 # again but with dli and not factor light
   
-  # using Light Level NOT dli: residuals not amazing 
+# usingdli: residuals not amazing 
 mod<-lmer(mortality~dli*dom+(1|genotype), df.mort.T2.Nat.1shade)
 anova(mod)
 qqPlot(residuals(mod)) #Terrible
@@ -294,11 +292,10 @@ qqPlot(residuals(mod)) #Terrible
 #try transforming - this also works better for residuals. 
   df.mort.T2.Nat.1shade$mortality_log<-log10(df.mort.T2.Nat.1shade$mortality+1)
 
-mod<-lmer(mortality_log~light.level*dom+(1|genotype), df.mort.T2.Nat.1shade)
+mod<-lmer(mortality_log~dli*dom+(1|genotype), df.mort.T2.Nat.1shade)
 anova(mod)
-qqPlot(residuals(mod)) #terrible
-
-
+qqPlot(residuals(mod)) #GOOD
+#how to deal with post hoc
 
 
 
