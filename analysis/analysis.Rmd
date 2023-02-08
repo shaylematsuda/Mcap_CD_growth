@@ -156,7 +156,7 @@ qqPlot(residuals(mod)) #looks better
   cld(emm)
   pairs(emm)  # C is diff from D at all light levels except High light. 
   
-# again but with dli and not  light level
+# again but with dli and not  light level ###
 mod<-lmer(mortality~dli*dom+(1|genotype), df.mort.T2)
 anova(mod)
 qqPlot(residuals(mod)) #doesn't look amazing
@@ -251,11 +251,8 @@ qqPlot(residuals(mod)) #terrible
 
 ```
 
-
 #Revision.1 mortality only  3 light treatments (combine dark ones) I THINK THIS IS THE WAY
 ```{r}
-#df df.mort.T2.bins.3treat.csv
-
 df.mort.T2.Nat.1shade<-read.csv("df.mort.T2.bins.3treat.csv")
 
 # using Light Level NOT dli: residuals not amazing 
@@ -270,9 +267,11 @@ qqPlot(residuals(mod)) #TERRIBLE
   pairs(emm)  # C is diff from D at all light levels except High light. 
 
 #try log transforming 
+  df.mort.T2.Nat.1shade$mortality_log<-log10(df.mort.T2.Nat.1shade$mortality+1)
+
 mod<-lmer(mortality_log~light.level*dom+(1|genotype), df.mort.T2.Nat.1shade)
 anova(mod)
-qqPlot(residuals(mod)) #awful
+qqPlot(residuals(mod)) #good
 
 #try a stronger transform
 df.mort.T2.Nat.1shade$mortality_quart<-df.mort.T2.Nat.1shade$mortality^(1/4)
@@ -288,48 +287,18 @@ mod<-lmer(mortality~dli*dom+(1|genotype), df.mort.T2.Nat.1shade)
 anova(mod)
 qqPlot(residuals(mod)) #Terrible
  
-
-#try transforming - this also works better for residuals. 
+#try transforming - this also works better for residuals.  ####
   df.mort.T2.Nat.1shade$mortality_log<-log10(df.mort.T2.Nat.1shade$mortality+1)
 
 mod<-lmer(mortality_log~dli*dom+(1|genotype), df.mort.T2.Nat.1shade)
 anova(mod)
 qqPlot(residuals(mod)) #GOOD
-#how to deal with post hoc
-
-
+#no post hoc.
 
 
 ```
 
 
-
-
-
-
-#Revision.1 mortality, try combining two lowest light treatments -Residuals look terrible
-```{r}
-df.mort.T2.bins.3treat<-read.csv("df.mort.T2.bins.3treat.csv")
-
-hist(df.mort.T2.Nat.1shade$mortality_log) <- need a very diff transform
-
-# using Light Level NOT dli: residuals not amazing 
-mod<-lmer(mortality_log~light.level*dom+(1|genotype), df.mort.T2.bins.3treat)
-anova(mod)
-qqPlot(residuals(mod)) #TERRIBLE
-  emm<-emmeans(mod,  ~ light.level|dom, adjust="Tukey") 
-  cld(emm)
-  pairs(emm)  #.
-   emm<-emmeans(mod,  ~dom|light.level, adjust="Tukey") #
-  cld(emm)
-  pairs(emm)  # 
-
-  df.mort.T2.bins.3treat$mortality.log<-log10(df.mort.T2.bins.3treat$mortality+1)
-mod<-lmer(mortality.log~light.level*dom+(1|genotype), df.mort.T2.bins.3treat)
-anova(mod)
-qqPlot(residuals(mod)) #better, usable
-
-```
 
 
 # Growth
