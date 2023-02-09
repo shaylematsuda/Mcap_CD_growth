@@ -347,26 +347,51 @@ temp_plot<-ggplot(data=Mcap.temp.meta.melt, aes(x=datetime, y=temp, color=logger
   ggtitle("Temp")+
   theme(plot.title = element_text(size=20, face = "italic"));temp_plot 
 
-temp_plot<-ggplot(data=Mcap.temp.meta.melt, aes(x=datetime, y=temp, color=logger)) +
-  geom_line(aes(color=logger), linetype=2, show.legend = F)+
+#new tank column
+Mcap.temp.meta.melt$logger<-as.character(Mcap.temp.meta.melt$logger)
+ Mcap.temp.meta.melt<- Mcap.temp.meta.melt %>%
+  mutate(Tank = case_when(
+    endsWith(logger, "logger_Tank13") ~ "Tank 13",
+      endsWith(logger, "logger_Tank14") ~ "Tank 14",
+    endsWith(logger, "logger_Tank17") ~ "Tank 17",
+    endsWith(logger, "logger_Tank16") ~ "Tank 16",
+    ))
+ 
+ 
+#SI Fig 1
+temp_plot<-ggplot(data=Mcap.temp.meta.melt, aes(x=datetime, y=temp, color=Tank)) +
+  geom_smooth(aes(color=Tank), linetype=1, show.legend = T)+
   xlab("") + 
-  theme_bw() + 
+ geom_vline(xintercept = as_datetime("2017-11-29"),
+             col = "black", lwd = .5, linetype=2)+
+theme_bw() + 
   theme(axis.line = element_line(color = 'black'), 
-        axis.title=element_text(size=14,face="bold"), 
+        axis.title=element_text(size=10,face="bold"), 
         panel.border = element_blank(), 
         panel.grid.major = element_blank(), 
-        panel.grid.minor = element_blank(), s
-        text = element_text(size=18),  
-        plot.background =element_blank(), 
+        panel.grid.minor = element_blank(), 
+        text = element_text(size=10),  
+        plot.background =element_rect(fill="white"), 
         legend.key = element_blank()) + 
   theme(panel.grid.major = element_blank(), 
         panel.grid.minor = element_blank(),
         panel.background = element_rect(colour = "black", size=1))+
   theme(aspect.ratio=1)+
-  ylab(expression(paste("temp"))) +
-  ggtitle("UROP temp")+
-  theme(plot.title = element_text(size=20, face = "italic"));temp_plot 
+  ylab(expression(paste( "Temperature (°C)"))) +
+  ggtitle("Temperature")+
+  theme(plot.title = element_text(size=20, face = "italic"))+
+  scale_color_discrete(name="")+
+  guides(shape = guide_legend(override.aes = list(size = 0.3)))+
+  guides(color = guide_legend(override.aes = list(size = 0.3)))+
+  theme(legend.key=element_rect(colour=NA, fill=NA))+
+    theme(legend.position = c(0.75, 0.75));temp_plot 
 
+  ggsave(temp_plot, filename = "output/figure_S1.png", width = 100, height = 100, units= "mm")
+
+
+
+
+#Mean temp across tanks
 temp_plot<-ggplot(data=Mcap.temp.meta.melt, aes(x=datetime, y=temp)) +
   geom_smooth( linetype=1, show.legend = F)+
   theme_bw() + 
@@ -405,8 +430,43 @@ Mcap.temp.T2 <- Mcap.temp.meta.melt %>%
 
 #mean of T1-T2
 Mcap.temp.T2 %>%
-  #group_by(logger) %>%                                          # group by shade treatment
+  #group_by(logger) %>%                                         
   summarise(meantemp = mean(temp, na.rm=T), sd=sd(temp, na.rm=T))  
+
+```
+
+#NOAA BUOY DATA Station MOKH1
+```{r}
+#https://www.tidyverse.org/blog/2021/03/clock-0-1-0/
+library(clock)
+library(tidyverse)
+library(lubridate)
+
+mok<-read.csv("MOK1_data.csv")
+as_tibble(mok)
+
+mok2 <- mok %>%
+  mutate(
+    date = date_build(year,month,day), 
+    .keep = "unused", 
+    .before = 1
+  )
+
+#remove any temp over 40C bc impossible (NAs as 999s in NOAA data)
+mok2<- subset(mok2, degC<40)
+
+#average per month
+mok3<-mok2 %>%
+  mutate(date = date_group(date, "month")) %>%
+  group_by(date) %>%
+  summarise(avg_temp = mean(degC, na.rm = TRUE), .groups = "drop")
+#pull out month
+mok4<-mutate(mok3, month = get_month(date))
+mok4<-mok4%>%select(month, avg_temp)
+#ave per month
+mok5<-mok4 %>%
+  group_by(month) %>%
+  summarise(avg_temp = mean(avg_temp, na.rm = TRUE), .groups = "drop")
 
 ```
 
