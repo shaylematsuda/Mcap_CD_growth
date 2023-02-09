@@ -95,6 +95,39 @@ df.mort %>%
 # arcsinsqrt transform
 df.mort.T2 <- filter(df.mort, time.point == "T2") %>% mutate(asin = asin(sqrt(mortality/100)))
 
+# Fit lmer
+mod2 <- lmer(asin ~ dli * dom + (1|tank) + (1|genotype), data = df.mort.T2)
+summary(mod2)  # interaction is sig. with lmer on asinsqrt transformed data
+hist(residuals(mod2))
+
+# Get model outputs for lmer
+emm2 <- emmeans(mod2, ~ dom*dli, at = list(dli = sort(unique(df.mort.T2$dli))))
+rbind(contrast(emm2, method = "pairwise", by = c("dli")), adjust = "fdr")
+
+# Plot figure 1  ####
+# reorder factors
+df.mort.T2$light.level <- factor(df.mort.T2$light.level, levels = c("High Shade", "Medium Shade", "Low Shade","Natural"))
+df.mort.T2<-df.mort.T2[!is.na(df.mort.T2$mortality),]#remove NAs
+#create partial mortality groups
+df.mort.T2 <- df.mort.T2 %>%
+  mutate(mortcat = case_when(mortality == 0 ~ "0",
+                             mortality > 0 & mortality < 50 ~ "1-50",
+                             mortality >= 50 ~ "50+"))
+
+ggplot(df.mort.T2, aes(x = light.level, fill = mortcat)) +
+  scale_fill_manual(values=c('#2A788EFF','#22A884FF', '#7AD151FF'))+
+  facet_wrap(~dom) + 
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+  panel.background = element_blank(), axis.line = element_line(colour = "black"))+
+  geom_bar(position = "fill")
+
+# summary(chi)
+# chi <- chisq.test(df.mort.T2$light.level, df.mort.T2$mortcat)
+
+```
+# sumbission mortality  - delete
+```{r}
+
 # Fit glm - quasibinomial
 mod <- glm(mortality/100 ~ dli * dom, family = "quasibinomial", data = df.mort.T2)
 car::Anova(mod)
@@ -105,43 +138,12 @@ summary(emm, type = "response")
 # pairwise comparisons
 rbind(contrast(emm, method = "pairwise", by = c("dli")), adjust = "fdr")
 
-
-# Fit lmer - REVISION
-mod2 <- lmer(asin ~ dli * dom + (1|tank) + (1|genotype), data = df.mort.T2)
-summary(mod2)  # interaction is sig. with lmer on asinsqrt transformed data
-hist(residuals(mod2))
-
-# Get model outputs for lmer
-emm2 <- emmeans(mod2, ~ dom*dli, at = list(dli = sort(unique(df.mort.T2$dli))))
-rbind(contrast(emm2, method = "pairwise", by = c("dli")), adjust = "fdr")
-
-# So with the quasibinomial the interaction term is not sig. in anova, but the posthocs show highly sig symbiont effect at low light, but not high light, suggesting there is an interaction... weird...
-
 # get fits and plot
 res <- expand_grid(dom = c("C", "D"), dli = seq(0,4,0.1))
 res$pred <- predict(mod2, res, type = "response", re.form = NA)
 
-# Plot figure 1 - REVISIONS
 
-# reorder factors
-df.mort.T2$light.level <- factor(df.mort.T2$light.level, levels = c("High Shade", "Medium Shade", "Low Shade","Natural"))
-
-df.mort.T2<-df.mort.T2[!is.na(df.mort.T2$mortality),]#remove NAs
-
-df.mort.T2 <- df.mort.T2 %>%
-  mutate(mortcat = case_when(mortality == 0 ~ "0",
-                             mortality > 0 & mortality < 50 ~ "1-50",
-                             mortality >= 50 ~ "50+"))
-# chi <- chisq.test(df.mort.T2$light.level, df.mort.T2$mortcat)
-# summary(chi)
-ggplot(df.mort.T2, aes(x = light.level, fill = mortcat)) +
-  scale_fill_manual(values=c('#2A788EFF','#22A884FF', '#7AD151FF'))+
-  facet_wrap(~dom) + 
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-  panel.background = element_blank(), axis.line = element_line(colour = "black"))+
-  geom_bar(position = "fill")
-
-#fig 1 old
+#fig 1 old ####
 set.seed(36)
 
 fig1 <- ggplot(data = df.mort.T2,
