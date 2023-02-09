@@ -62,24 +62,44 @@ ggplot(df.mort, aes(x = days, y = mortality, color = dom, group = frag.id)) +
   facet_wrap(~light.level) + 
   geom_line()
 
+# Summary stats
+df.mort %>% 
+  group_by(dli, dom) %>%
+  summarise(mean = median(mortality, na.rm = T),
+            iqr = paste0(quantile(mortality, probs = c(0.25, 0.75), na.rm = T), collapse = "-"))
+
 # Fit glm
-df.mort.T2 <- filter(df.mort, time.point == "T2")
+df.mort.T2 <- filter(df.mort, time.point == "T2") %>% mutate(asin = asin(sqrt(mortality/100)))
 mod <- glm(mortality/100 ~ dli * dom, family = "quasibinomial", data = df.mort.T2)
 car::Anova(mod)
+hist(residuals(mod))
+mod2 <- lmer(asin ~ dli * dom + (1|tank) + (1|genotype), data = df.mort.T2)
+summary(mod2)  # interaction is sig. with lmer on asinsqrt transformed data
+hist(residuals(mod2))
+
 
 # Get model outputs
 emm <- emmeans(mod, ~ dom*dli, at = list(dli = sort(unique(df.mort.T2$dli))))
-# pairwise comparisons -- only the dli:timepoint combos that actually appear in the data
+summary(emm, type = "response")
+# pairwise comparisons
 rbind(contrast(emm, method = "pairwise", by = c("dli")), adjust = "fdr")
 
+#asinsqrt version:
+emm2 <- emmeans(mod2, ~ dom*dli, at = list(dli = sort(unique(df.mort.T2$dli))))
+rbind(contrast(emm2, method = "pairwise", by = c("dli")), adjust = "fdr")
+
+# So with the quasibinomial the interaction term is not sig. in anova, but the posthocs show highly sig symbiont effect at low light, but not high light, suggesting there is an interaction... weird...
+
+# get fits and plot
 res <- expand_grid(dom = c("C", "D"), dli = seq(0,4,0.1))
-res$pred <- predict(mod, res, type = "response")
+res$pred <- predict(mod2, res, type = "response", re.form = NA)
 
 # Plot
 set.seed(36)
-fig2 <- ggplot(data = df.mort.T2,
+ggplot(data = df.mort.T2,
        aes(x = dli, y = mortality, color = dom, group = dom)) +
   geom_jitter(alpha = 0.5) +
+  geom_violin(aes(group = dom:dli)) +
   geom_line(data = res, aes(y = pred * 100))+
   scale_color_manual(values=c("deepskyblue3", "chocolate3"), name = NULL) +
   labs(y = "Percent Tissue Loss", x = "Daily light integral (mol m-2 d-1)")+
@@ -87,6 +107,22 @@ fig2 <- ggplot(data = df.mort.T2,
   theme(legend.position = c(0.9, 0.9))
 
 ggsave(fig2, filename = "output/figure2.png", width = 84, height = 84, units= "mm")
+
+
+# new type of figure?
+df.mort.T2 <- df.mort.T2 %>%
+  mutate(mortcat = case_when(mortality == 0 ~ "0",
+                             mortality > 0 & mortality < 50 ~ "1-50",
+                             mortality >= 50 ~ "50+"))
+
+# chi <- chisq.test(df.mort.T2$light.level, df.mort.T2$mortcat)
+# summary(chi)
+
+ggplot(df.mort.T2, aes(x = light.level, fill = mortcat)) + 
+  facet_wrap(~dom) + 
+  geom_bar(position = "fill")
+
+
 ```
 
 # Growth
@@ -135,6 +171,11 @@ nrow(grres) - nrow(grres.f)   # Filtered out 6 observations
 
 
 ##############################################
+
+# Summary stats
+grres.f %>%
+  group_by(light.level, time.point) %>%
+  summarise(meangr = mean(growth.rate))
 
 # Run stats
 mod <- lmer(growth.rate ~ dom * dli * time.point + (1|genotype/frag.id) + (1|tank), data = grres.f)
