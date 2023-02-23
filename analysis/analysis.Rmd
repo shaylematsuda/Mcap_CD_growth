@@ -124,8 +124,17 @@ ggplot(df.mort.T2, aes(x = light.level, fill = mortcat)) +
 # summary(chi)
 # chi <- chisq.test(df.mort.T2$light.level, df.mort.T2$mortcat)
 
+#test 
+df.mort.T2test<-subset(df.mort.T2, light.level=="Natural" | light.level=="Low Shade")
+mod2 <- lmer(asin ~ dli * dom + (1|tank) + (1|genotype), data = df.mort.T2test)
+summary(mod2)  # interaction is sig. with lmer on asinsqrt transformed data
+hist(residuals(mod2))
+
+# Get model outputs for lmer
+emm2 <- emmeans(mod2, ~ dom*dli, at = list(dli = sort(unique(df.mort.T2$dli))))
+rbind(contrast(emm2, method = "pairwise", by = c("dli")), adjust = "fdr")
 ```
-# sumbission mortality  - delete
+# sumbission mortality  - delete when done
 ```{r}
 
 # Fit glm - quasibinomial
@@ -171,7 +180,6 @@ fig1 <- ggplot(data = df.mort.T2,
   theme_custom() +
   theme(legend.position = c(0.9, 0.9))
 ```
-
 
 # Growth
 ```{r}
