@@ -232,6 +232,19 @@ df <- df %>%
   group_by(genotype) %>%
   mutate(dom = replace_na(dom, unique(dom[!is.na(dom)]))) %>%
   ungroup()
+
+#SI2 Table Genotype x symbiont ID, qPCR
+df1<-df #copy
+df1<-subset(df1, time.point=="T0")
+df2<-df1[,c( 6,10)]
+df2<-na.omit(df2)
+df3<-df2 %>%
+  group_by(genotype) %>%
+  summarise_at(vars(propD), list(PropD = mean))
+
+#write.csv(df3, "df3.csv")
+
+
 ```
 
 # Partial tissue loss (Percent scores, in 5% intervals)

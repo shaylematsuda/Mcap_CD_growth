@@ -12,6 +12,8 @@ Original script by M. Hoban
 library(fs)
 library(reshape2)
 library(emmeans)
+library(lmerTest)
+
 library(lubridate)# for date parsing
 library(tidyverse)
 ```
