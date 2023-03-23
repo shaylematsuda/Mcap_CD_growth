@@ -68,7 +68,7 @@ df <- read_csv("data/processed/all_data_cleaned.csv") %>%
 
 # Load light data
 dli <- read_csv("data/processed/dli.csv") %>%
-   rename(time.point = timepoint)  %>%
+   dplyr::rename(time.point = timepoint)  %>%
    mutate(light.level = case_when(Shade == "1_cloth" ~ "Natural",
                                   Shade == "2_cloth" ~ "Low Shade",
                                   Shade == "3_cloth" ~ "Medium Shade",
@@ -205,7 +205,7 @@ gr <- gr %>%
 
 # Add mean daily light integrals for light treatment categories
 gr <- gr %>%
-   full_join(dli)%>%
+   full_join(dli)
 
 gr$light.level<-as.factor(gr$light.level)
 
