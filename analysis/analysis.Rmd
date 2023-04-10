@@ -55,7 +55,7 @@ library(pairwiseAdonis)
 library("scales")
 library(RColorBrewer)
 library(colorRamps)
-library(devtools)s
+library(devtools)
 ```
 
 # Load in data
@@ -100,9 +100,14 @@ mod2 <- lmer(asin ~ dli * dom + (1|tank) + (1|genotype), data = df.mort.T2)
 summary(mod2)  # interaction is sig. with lmer on asinsqrt transformed data
 hist(residuals(mod2))
 
-# Get model outputs for lmer
+# Get model outputs for lmer dom symbiont* dli
 emm2 <- emmeans(mod2, ~ dom*dli, at = list(dli = sort(unique(df.mort.T2$dli))))
 rbind(contrast(emm2, method = "pairwise", by = c("dli")), adjust = "fdr")
+
+# Get model outputs for lmer by dom symbiont only
+emm2 <- emmeans(mod2, ~ dom)
+rbind(contrast(emm2, method = "pairwise"), adjust = "fdr")
+
 
 # Plot figure 1  ####
 # reorder factors
@@ -121,7 +126,7 @@ fig1<-ggplot(df.mort.T2, aes(x = light.level, fill = mortcat)) +
   panel.background = element_blank(), axis.line = element_line(colour = "black"))+
   geom_bar(position = "fill");fig1
 
-#ggsave(fig1, filename = "output/figure1.tiff", width = 84, height = 84, units= "mm")
+ggsave(fig1, filename = "output/figure1.pdf", width = 84, height = 84, units= "mm")
 
 #Test top 2 light levels only (for reviewer) ####
 df.mort.T2test<-subset(df.mort.T2, light.level=="Natural" | light.level=="Low Shade")
@@ -236,11 +241,22 @@ grres.f %>%
 # Run stats
 mod <- lmer(growth.rate ~ dom * dli * time.point + (1|genotype/frag.id) + (1|tank), data = grres.f)
 anova(mod)
+aug<-augment(mod)
+ggplot(aug, aes(x=factor(dli), y=.cooksd))+
+  geom_boxplot()+
+  facet_grid(~time.point)
+
+
 
 # Get model outputs
 emm <- emmeans(mod, ~ dom*dli|time.point, at = list(dli = sort(unique(gr$dli))))
 # pairwise comparisons -- only the dli:timepoint combos that actually appear in the data
 rbind(contrast(emm, method = "pairwise", by = c("dli", "time.point"))[c(2,4,6,8,9,11,13,15)], adjust = "fdr")
+
+# ROSS how to do pairwise comparing DLIs within a symbiont group AT each time point...
+rbind(contrast(emm, method = "pairwise", by = c("dom", "time.point"))[c(2,4,6,8,9,11,13,15)], adjust = "fdr")
+
+
 
 # Get fitted values to plot
 pred <- tidyr::expand(grres.f, dom, time.point, dli = seq(0.331, 4.13, len = 101))
