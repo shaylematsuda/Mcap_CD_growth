@@ -82,6 +82,11 @@ df.mort %>%
   summarise(mean = median(mortality, na.rm = T),
             iqr = paste0(quantile(mortality, probs = c(0.25, 0.75), na.rm = T), collapse = "-"))
 
+df.mort.T2 %>%  #n of corals in mortality dataset by treatment
+  group_by(dli, dom) %>%
+  count(dli, dom)
+
+
 # arcsinsqrt transform
 df.mort.T2 <- filter(df.mort, time.point == "T2") %>% mutate(asin = asin(sqrt(mortality/100)))
 
