@@ -37,25 +37,15 @@ theme_custom <- function() {
 ```
 one of these packages needed for qqplot figure out which and then delete
 ```{r}
-library(plyr)
-library(dplyr)
-library(ggplot2)
-library(ggpubr)
-library(lmerTest)
-library(car)
-library(emmeans)
-library(gridExtra)
-library(multcomp)
-library(reshape)
-library(tidyverse)
-library(factoextra)
-library(reshape2)
-library(vegan)
-library(pairwiseAdonis)
-library("scales")
-library(RColorBrewer)
-library(colorRamps)
-library(devtools)
+# library(car)
+# library(gridExtra)
+# library(multcomp)
+# library(reshape)
+# library(factoextra)
+# library(reshape2)
+# library(vegan)
+# library(pairwiseAdonis)
+# library("scales")
 ```
 
 # Load in data
@@ -128,7 +118,10 @@ fig1<-ggplot(df.mort.T2, aes(x = light.level, fill = mortcat)) +
 
 ggsave(fig1, filename = "output/figure1.pdf", width = 84, height = 84, units= "mm")
 
+```
+
 #Test top 2 light levels only (for reviewer) ####
+```{r}
 df.mort.T2test<-subset(df.mort.T2, light.level=="Natural" | light.level=="Low Shade")
 mod2 <- lmer(asin ~ dli * dom + (1|tank) + (1|genotype), data = df.mort.T2test)
 summary(mod2)  # interaction is significant, domD is significant
@@ -148,6 +141,7 @@ hist(residuals(mod))
 # Get model outputs for quasibinomial
 emm <- emmeans(mod, ~ dom*dli, at = list(dli = sort(unique(df.mort.T2$dli))))
 summary(emm, type = "response")
+
 # pairwise comparisons
 rbind(contrast(emm, method = "pairwise", by = c("dli")), adjust = "fdr")
 
@@ -238,6 +232,11 @@ grres.f %>%
   group_by(light.level, time.point) %>%
   summarise(meangr = mean(growth.rate))
 
+grres.f %>%
+  group_by(light.level) %>%
+  summarise(meangr = mean(growth.rate))
+
+
 # Run stats
 mod <- lmer(growth.rate ~ dom * dli * time.point + (1|genotype/frag.id) + (1|tank), data = grres.f)
 anova(mod)
@@ -253,13 +252,24 @@ emm <- emmeans(mod, ~ dom*dli|time.point, at = list(dli = sort(unique(gr$dli))))
 # pairwise comparisons -- only the dli:timepoint combos that actually appear in the data
 rbind(contrast(emm, method = "pairwise", by = c("dli", "time.point"))[c(2,4,6,8,9,11,13,15)], adjust = "fdr")
 
-# ROSS how to do pairwise comparing DLIs within a symbiont group AT each time point...
+
+
+
+
+#### ROSS how to do pairwise comparing DLIs within a symbiont group AT each time point...
 emm <- emmeans(mod, ~ dom*dli|time.point, at = list(dli = sort(unique(gr$dli))))
 options(max.print = 10000)  
 rbind(contrast(emm, method = "pairwise", by = c( "time.point")), adjust = "fdr")
 
 #################This seems impossible - ALL are <.0001.... 
 rbind(contrast(emm, method = "pairwise", by = c( "time.point"))[c(33,37,41,46,50,54,79,83,88,92,109,114,124,128,132,139,143,147,178,182,189,193,216,223)], adjust = "fdr")
+
+
+
+
+
+
+
 
 
 # Get fitted values to plot
@@ -319,72 +329,6 @@ Just Natural and Low Shade --> THIS does not have a significant 3-way.
 ```{r}
 grres.f.TOP2Shade<-grres.f
 grres.f.TOP2Shade<-subset(grres.f.TOP2Shade, light.level=="Natural"|light.level=="Low Shade")
-
-# Run stats
-mod <- lmer(growth.rate ~ dom * dli * time.point + (1|genotype/frag.id) + (1|tank), data = grres.f.TOP2Shade)
-anova(mod) #3-way interaction NOT significant now...
-hist(residuals(mod)) #great...
-
-# Get model outputs
-emm <- emmeans(mod, ~ dom*dli|time.point, at = list(dli = sort(unique(gr$dli))))
-# pairwise comparisons -- only the dli:timepoint combos that actually appear in the data
-rbind(contrast(emm, method = "pairwise", by = c("dli", "time.point"))[c(2,4,6,8,9,11,13,15)], adjust = "fdr")
-
-# Get fitted values to plot
-pred <- tidyr::expand(grres.f.TOP2Shade, dom, time.point, dli = seq(0.331, 4.13, len = 101))
-pred$fit <- predict(mod, pred, re.form = NA)
-bootfit <- bootMer(mod, nsim = 999, FUN = function(x) predict(x, pred, re.form = NA))
-pred$lci <- apply(bootfit$t, 2, quantile, 0.05)
-pred$uci <- apply(bootfit$t, 2, quantile, 0.95)
-
-# Plot
-
-grplot <- ggplot(grres.f.TOP2Shade, aes(x = dli, y = growth.rate, color = dom, fill = dom)) +
-  facet_wrap(~time.point) +
-  geom_violin(aes(group = interaction(dom, dli)), scale = "width", width = 0.3, alpha = 0.5) +
-  geom_line(data = pred, aes(y = fit)) +
-  geom_ribbon(data = pred, aes(y = fit, ymin = lci, ymax = uci), alpha = 0.2, lwd = 0) +
-  scale_color_manual(values=c("deepskyblue3", "chocolate3"), name = NULL) +
-  scale_fill_manual(values=c("deepskyblue3", "chocolate3"), name = NULL) +
-  theme_custom() +
-  theme(legend.position = c(0.05, 0.85)) +
-  xlab(expression(Daily~light~integral~(mol~m^-2~d^-1)))+
-  ylab(expression(Growth~rate~(mg~g^-1~d^-1)));grplot
-
-# Make temperature plot
-tempdat <- read_csv("data/processed/temperature.csv") %>%
-  mutate(time.point = if_else(datetime < "2017-11-29", "T1", "T2"))
-medtemp <- tempdat %>% group_by(time.point) %>% summarise(med = median(temp, na.rm = T))
-tempplot <- ggplot(data=tempdat, aes(x=datetime, y=temp)) +
-  geom_smooth(color = "black", show.legend = F, method = "gam", formula = y ~ s(x, bs = "bs")) +
-  coord_cartesian(ylim = c(23, 27.2)) +
-  theme_custom() +
-  labs(x = "", y = "Temp. (°C)");tempplot
-
-t1tempplot <- tempplot %+% filter(tempdat, time.point == "T1") +
-  geom_hline(data = filter(medtemp, time.point == "T1"), aes(yintercept = med), linetype = 2) +
-  scale_x_datetime(breaks = as_datetime(c("2017-10-29", "2017-11-29")), date_labels = "%e-%b") +
-  theme(axis.text.x = element_text(hjust = c(0, 1)),
-        axis.title.y = element_text(size = 7))
-t2tempplot <- tempplot %+% filter(tempdat, time.point == "T2") +
-  geom_hline(data = filter(medtemp, time.point == "T2"), aes(yintercept = med), linetype = 2) +
-  scale_x_datetime(breaks = as_datetime(c("2017-11-29", "2018-01-07")), date_labels = "%e-%b") +
-  theme(axis.text.y = element_blank(), axis.title.y = element_blank(), axis.ticks.y = element_blank(),
-        axis.text.x = element_text(hjust = c(0, 1)),
-        plot.margin = margin(l = 0, r = 10, t = 5, b = 5))
-
-# Make figure with insets
-fig2 <- ggdraw(grplot) +
-  draw_plot(t1tempplot, 0.19, 0.6, 0.32, 0.3) +
-  draw_plot(t2tempplot, 0.83, 0.6, 0.3, 0.3, hjust = 1); fig2
-
-#ggsave(fig2, filename = "output/figure2.tiff", width = 174, height = 90, units = "mm")
-```
-#growth Revisions.1 Just for reviewer (keep?)
-Just Natural, Low and medium --> THIS does not have a significant 3-way. 
-```{r}
-grres.f.TOP2Shade<-grres.f
-grres.f.TOP2Shade<-subset(grres.f.TOP2Shade, light.level=="Natural"|light.level=="Low Shade"|light.level=="Medium Shade")
 
 # Run stats
 mod <- lmer(growth.rate ~ dom * dli * time.point + (1|genotype/frag.id) + (1|tank), data = grres.f.TOP2Shade)
