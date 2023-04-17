@@ -465,14 +465,136 @@ mok2<- subset(mok2, degC<40)
 mok3<-mok2 %>%
   mutate(date = date_group(date, "month")) %>%
   group_by(date) %>%
-  summarise(avg_temp = mean(degC, na.rm = TRUE), .groups = "drop")
+  dplyr::summarise(avg_temp = mean(degC, na.rm = TRUE), .groups = "drop")
 #pull out month
 mok4<-mutate(mok3, month = get_month(date))
 mok4<-mok4%>%select(month, avg_temp)
 #ave per month
 mok5<-mok4 %>%
   group_by(month) %>%
-  summarise(avg_temp = mean(avg_temp, na.rm = TRUE), .groups = "drop")
+  dplyr::summarise(avg_temp = mean(avg_temp, na.rm = TRUE), .groups = "drop")
+
+
+#test
+
+#load data
+
+NOAA2000<-read.csv("data/NOAA buoy/2000_CO-OPS_1612480_met.csv")
+colnames(NOAA2000)[3] = "Temp"
+NOAA2000$Temp<-as.numeric(NOAA2000$Temp)
+
+NOAA2001<-read.csv("data/NOAA buoy/2001_CO-OPS_1612480_met.csv")
+colnames(NOAA2001)[3] = "Temp"
+NOAA2001$Temp<-as.numeric(NOAA2001$Temp)
+
+NOAA2002<-read.csv("data/NOAA buoy/2002_CO-OPS_1612480_met.csv")
+colnames(NOAA2002)[3] = "Temp"
+NOAA2002$Temp<-as.numeric(NOAA2002$Temp)
+
+NOAA2003<-read.csv("data/NOAA buoy/2003_CO-OPS_1612480_met.csv")
+colnames(NOAA2003)[3] = "Temp"
+NOAA2003$Temp<-as.numeric(NOAA2003$Temp)
+
+NOAA2004<-read.csv("data/NOAA buoy/2004_CO-OPS_1612480_met.csv")
+colnames(NOAA2004)[3] = "Temp"
+NOAA2004$Temp<-as.numeric(NOAA2004$Temp)
+
+NOAA2005<-read.csv("data/NOAA buoy/2005_CO-OPS_1612480_met.csv")
+colnames(NOAA2005)[3] = "Temp"
+NOAA2005$Temp<-as.numeric(NOAA2005$Temp)
+
+NOAA2006<-read.csv("data/NOAA buoy/2006_CO-OPS_1612480_met.csv")
+colnames(NOAA2006)[3] = "Temp"
+NOAA2006$Temp<-as.numeric(NOAA2006$Temp)
+
+NOAA2007<-read.csv("data/NOAA buoy/2007_CO-OPS_1612480_met.csv")
+colnames(NOAA2007)[3] = "Temp"
+NOAA2007$Temp<-as.numeric(NOAA2007$Temp)
+
+NOAA2008<-read.csv("data/NOAA buoy/2008_CO-OPS_1612480_met.csv")
+colnames(NOAA2008)[3] = "Temp"
+NOAA2008$Temp<-as.numeric(NOAA2008$Temp)
+
+NOAA2009<-read.csv("data/NOAA buoy/2009_CO-OPS_1612480_met.csv")
+colnames(NOAA2009)[3] = "Temp"
+NOAA2009$Temp<-as.numeric(NOAA2009$Temp)
+
+NOAA2010<-read.csv("data/NOAA buoy/2010_CO-OPS_1612480_met.csv")
+colnames(NOAA2010)[3] = "Temp"
+NOAA2010$Temp<-as.numeric(NOAA2010)
+
+NOAA2011<-read.csv("data/NOAA buoy/2011_CO-OPS_1612480_met.csv")
+colnames(NOAA2011)[3] = "Temp"
+NOAA2011$Temp<-as.numeric(NOAA2011$Temp)
+
+NOAA2012<-read.csv("data/NOAA buoy/2012_CO-OPS_1612480_met.csv")
+colnames(NOAA2012)[3] = "Temp"
+NOAA2012$Temp<-as.numeric(NOAA2012$Temp)
+
+NOAA2013<-read.csv("data/NOAA buoy/2013_CO-OPS_1612480_met.csv")
+colnames(NOAA2013)[3] = "Temp"
+NOAA2013$Temp<-as.numeric(NOAA2013$Temp)
+
+NOAA2014<-read.csv("data/NOAA buoy/2014_CO-OPS_1612480_met.csv")
+colnames(NOAA2014)[3] = "Temp"
+NOAA2014$Temp<-as.numeric(NOAA2014$Temp)
+
+NOAA2015<-read.csv("data/NOAA buoy/2015_CO-OPS_1612480_met.csv")
+colnames(NOAA2015)[3] = "Temp"
+NOAA2004$Temp<-as.numeric(NOAA2004$Temp)
+
+NOAA2016<-read.csv("data/NOAA buoy/2016_CO-OPS_1612480_met.csv")
+colnames(NOAA2016)[3] = "Temp"
+NOAA2004$Temp<-as.numeric(NOAA2004$Temp)
+
+NOAA2017<-read.csv("data/NOAA buoy/2017_CO-OPS_1612480_met.csv")
+colnames(NOAA2017)[3] = "Temp"
+NOAA2017$Temp<-as.numeric(NOAA2017$Temp)
+
+NOAA2018<-read.csv("data/NOAA buoy/2018_CO-OPS_1612480_met.csv")
+colnames(NOAA2018)[3] = "Temp"
+NOAA2018$Temp<-as.numeric(NOAA2018$Temp)
+
+NOAA2019<-read.csv("data/NOAA buoy/2019_CO-OPS_1612480_met.csv")
+colnames(NOAA2019)[3] = "Temp"
+NOAA2019$Temp<-as.numeric(NOAA2019$Temp)
+
+NOAA2020<-read.csv("data/NOAA buoy/2020_CO-OPS_1612480_met.csv")
+colnames(NOAA2020)[3] = "Temp"
+NOAA2020$Temp<-as.numeric(NOAA2020$Temp)
+
+NOAA2021<-read.csv("data/NOAA buoy/2021_CO-OPS_1612480_met.csv")
+colnames(NOAA2021)[3] = "Temp"
+NOAA2021$Temp<-as.numeric(NOAA2021$Temp)
+
+NOAA2022<-read.csv("data/NOAA buoy/2022_CO-OPS_1612480_met.csv")
+colnames(NOAA2022)[3] = "Temp"
+NOAA2022$Temp<-as.numeric(NOAA2022$Temp)
+
+
+NOAA.df<-rbind(NOAA2000,NOAA2001, NOAA2002,NOAA2003,NOAA2004,NOAA2005,NOAA2006,NOAA2007,NOAA2008,NOAA2009, NOAA2010,
+               NOAA2011, NOAA2012,NOAA2013,NOAA2014,NOAA2015,NOAA2016,NOAA2017,NOAA2018,NOAA2019,NOAA2020,NOAA2021,NOAA2022)
+NOAA.df$Date<-as.Date(NOAA.df$Date)
+
+
+NOAA.df<-NOAA.df %>%
+  dplyr::mutate(year = lubridate::year(Date), 
+                month = lubridate::month(Date), 
+                day = lubridate::day(Date))
+
+NOAA.df<-NOAA.df[ -c(1:2,4:5,7) ] #drop unneeded 
+colnames(NOAA.df)[1] = "Temp"
+
+NOAA.df$month<-as.factor(NOAA.df$month)
+NOAA.df$Temp<-as.numeric(NOAA.df$Temp)
+
+
+#average per month
+NOAA.df2<-NOAA.df %>%
+  group_by(month) %>%
+  dplyr::summarise(avg_temp = mean(Temp, na.rm = TRUE), .groups = "drop")
+
+
 
 ```
 

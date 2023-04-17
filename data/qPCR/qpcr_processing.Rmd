@@ -19,7 +19,7 @@ library(grid) #install.packages(grid)
 # Importing raw qPCR data from Quant Studio Design and Analysis Software 
 ```{r}
 # List qPCR data files for experimental fragments
-plates <- list.files(path = "qPCR", pattern = "UROP_Time.*.csv", full.names = TRUE)
+plates <- list.files(path = "data/qPCR", pattern = "UROP_Time.*.csv", full.names = TRUE)
 # Read in data and calculate target ratios
 df <- steponeR(files = plates, 
                delim = ",", 
