@@ -334,7 +334,26 @@ fig2 <- ggdraw(grplot) +
   draw_plot(t1tempplot, 0.19, 0.6, 0.32, 0.3) +
   draw_plot(t2tempplot, 0.83, 0.6, 0.3, 0.3, hjust = 1); fig2
 
+
 ggsave(fig2, filename = "output/figure2.png", width = 174, height = 90, units = "mm")
+
+#add astrix
+ann_text <- data.frame(dli = 1.4,growth.rate = 4.5,lab = "text",
+                       time.point = factor("T2",levels = c("T1","T2")))
+ann_text
+fig2+ geom_text(data = ann_text,label = "text")
+
+fig2+  annotate(geom = "text", x = 3, y = 2, label = "TEST", adj = 0.5, size = 5, fontface = "italic") 
+
+
+
+
+
+
+
+
+ggsave(fig2, filename = "output/figure2.pdf", width = 174, height = 90, units = "mm")
+
 ```
 
 #qPCR distribution
