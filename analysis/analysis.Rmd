@@ -121,7 +121,15 @@ fig1<-ggplot(df.mort.T2, aes(x = light.level, fill = mortcat)) +
   panel.background = element_blank(), axis.line = element_line(colour = "black"))+
   geom_bar(position = "fill");fig1
 
-ggsave(fig1, filename = "output/figure1.pdf", width = 84, height = 84, units= "mm")
+#ggsave(fig1, filename = "output/figure1.pdf", width = 84, height = 84, units= "mm")
+
+
+
+#average tissue loss per treatment * dom 
+df.mort.T2 %>%
+  group_by(light.level,dom) %>%
+  dplyr::summarise(avg_loss = mean(mortality, na.rm = TRUE), .groups = "drop")
+
 
 ```
 
