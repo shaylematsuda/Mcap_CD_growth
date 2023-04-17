@@ -125,6 +125,18 @@ fig1<-ggplot(df.mort.T2, aes(x = light.level, fill = mortcat)) +
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 #average tissue loss per treatment * dom 
 df.mort.T2 %>%
   group_by(light.level,dom) %>%
