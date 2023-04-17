@@ -82,13 +82,21 @@ df.mort %>%
   summarise(mean = median(mortality, na.rm = T),
             iqr = paste0(quantile(mortality, probs = c(0.25, 0.75), na.rm = T), collapse = "-"))
 
+
+
+
+# arcsinsqrt transform and get T2 only
+df.mort.T2 <- filter(df.mort, time.point == "T2") %>% mutate(asin = asin(sqrt(mortality/100)))
+
+df.mort.T2 %>% 
+  group_by(dli, dom) %>%
+  summarise(med = median(mortality, na.rm = TRUE),
+            p25 = quantile(mortality, 0.25, na.rm = TRUE),
+            p75 = quantile(mortality, 0.75, na.rm = TRUE))
+
 df.mort.T2 %>%  #n of corals in mortality dataset by treatment
   group_by(dli, dom) %>%
   count(dli, dom)
-
-
-# arcsinsqrt transform
-df.mort.T2 <- filter(df.mort, time.point == "T2") %>% mutate(asin = asin(sqrt(mortality/100)))
 
 # Fit lmer
 mod2 <- lmer(asin ~ dli * dom + (1|tank) + (1|genotype), data = df.mort.T2)
@@ -258,7 +266,7 @@ grres.f %>%
   summarise(meangr = mean(growth.rate))
 
 grres.f %>%
-  group_by(light.level) %>%
+  group_by(light.level, time.point, dom) %>%
   summarise(meangr = mean(growth.rate))
 
 
@@ -346,6 +354,9 @@ fig2 <- ggdraw(grplot) +
   draw_plot(t1tempplot, 0.19, 0.6, 0.32, 0.3) +
   draw_plot(t2tempplot, 0.83, 0.6, 0.3, 0.3, hjust = 1); fig2
 
+
+ggsave(fig2, filename = "output/figure2.png", width = 174, height = 90, units = "mm")
+
 #add astrix
 ann_text <- data.frame(dli = 1.4,growth.rate = 4.5,lab = "text",
                        time.point = factor("T2",levels = c("T1","T2")))
@@ -362,6 +373,7 @@ fig2+  annotate(geom = "text", x = 3, y = 2, label = "TEST", adj = 0.5, size = 5
 
 
 ggsave(fig2, filename = "output/figure2.pdf", width = 174, height = 90, units = "mm")
+
 ```
 
 #qPCR distribution
