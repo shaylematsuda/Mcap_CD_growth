@@ -118,23 +118,14 @@ fig1<-ggplot(df.mort.T2, aes(x = light.level, fill = mortcat)) +
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 #average tissue loss per treatment * dom 
 df.mort.T2 %>%
   group_by(light.level,dom) %>%
   dplyr::summarise(avg_loss = mean(mortality, na.rm = TRUE), .groups = "drop")
-
+#median
+df.mort.T2 %>%
+  group_by(light.level,dom) %>%
+  dplyr::summarise(median = median(mortality, na.rm = TRUE), .groups = "drop")
 
 ```
 
@@ -245,17 +236,7 @@ nrow(grres) - nrow(grres.f)   # Filtered out 6 observations
 
 ##############################################
 
-# Summary stats
-#growth rate by light level and time point:
-# grres.f %>%
-#   group_by(light.level, time.point, dom) %>%
-#   summarise(meangr = mean(growth.rate))
-#   
-# 
-#       
-      
-      
-
+    
 # Run stats
 mod <- lmer(growth.rate ~ dom * dli * time.point + (1|genotype/frag.id) + (1|tank), data = grres.f)
 anova(mod)
@@ -280,11 +261,12 @@ rbind(contrast(emm, method = "pairwise", by = c("dli", "time.point"))[c(2,4,6,8,
      group_by(dli, dom, time.point) %>%
        summarise(meangr = mean(emmean)) %>%
           pivot_wider(names_from = dom, values_from=meangr)%>%
-           mutate(percent=((((C-D)/D))*100)) 
+           mutate(percent=((((abs(C-D))/D))*100))
     
+    #growth of all corals across whole experimemt at 4 avg DLIs
+    emm <- emmeans(mod, ~ dli, at = list(dli = c(0.36, 0.76, 1.55, 3.80)))
+
     
-    
-  
 # Get model outputs for time.point comparision
 emm <- emmeans(mod, ~ dom|time.point, at = list(dli = sort(unique(gr$dli))))
 rbind(contrast(emm, method = "pairwise", by = c( "time.point")), adjust = "fdr")
@@ -344,25 +326,7 @@ fig2 <- ggdraw(grplot) +
   draw_plot(t2tempplot, 0.83, 0.6, 0.3, 0.3, hjust = 1); fig2
 
 
-#ggsave(fig2, filename = "output/figure2.png", width = 174, height = 90, units = "mm")
-
-#add astrix
-ann_text <- data.frame(dli = 1.4,growth.rate = 4.5,lab = "text",
-                       time.point = factor("T2",levels = c("T1","T2")))
-ann_text
-fig2+ geom_text(data = ann_text,label = "text")
-
-fig2+  annotate(geom = "text", x = 3, y = 2, label = "TEST", adj = 0.5, size = 5, fontface = "italic") 
-
-
-
-library(ggpubr)
-library(rstatix)
-
-
-
-
-#ggsave(fig2, filename = "output/figure2.pdf", width = 174, height = 90, units = "mm")
+#ggsave(fig2, filename = "output/figure2.tiff", width = 174, height = 90, units = "mm")
 
 ```
 
