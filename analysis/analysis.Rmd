@@ -35,18 +35,6 @@ theme_custom <- function() {
     )
 }
 ```
-one of these packages needed for qqplot figure out which and then delete
-```{r}
-# library(car)
-# library(gridExtra)
-# library(multcomp)
-# library(reshape)
-# library(factoextra)
-# library(reshape2)
-# library(vegan)
-# library(pairwiseAdonis)
-# library("scales")
-```
 
 # Load in data
 ```{r}
@@ -164,7 +152,7 @@ hist(residuals(mod2)) #residuals not normal
 emm2 <- emmeans(mod2, ~ dom*dli, at = list(dli = sort(unique(df.mort.T2test$dli))))
 rbind(contrast(emm2, method = "pairwise", by = c("dli")), adjust = "fdr") # C-D sig diff only low light
 ```
-# sumbission 1 mortality  - Delete before resubmission
+# sumbission 1 mortality  - Delete before Zenodo
 ```{r}
 
 # Fit glm - quasibinomial
@@ -261,14 +249,15 @@ nrow(grres) - nrow(grres.f)   # Filtered out 6 observations
 ##############################################
 
 # Summary stats
-grres.f %>%
-  group_by(light.level, time.point) %>%
-  summarise(meangr = mean(growth.rate))
-
-grres.f %>%
-  group_by(light.level, time.point, dom) %>%
-  summarise(meangr = mean(growth.rate))
-
+#growth rate by light level and time point:
+# grres.f %>%
+#   group_by(light.level, time.point, dom) %>%
+#   summarise(meangr = mean(growth.rate))
+#   
+# 
+#       
+      
+      
 
 # Run stats
 mod <- lmer(growth.rate ~ dom * dli * time.point + (1|genotype/frag.id) + (1|tank), data = grres.f)
@@ -285,25 +274,28 @@ emm <- emmeans(mod, ~ dom*dli|time.point, at = list(dli = sort(unique(gr$dli))))
 # pairwise comparisons -- only the dli:timepoint combos that actually appear in the data
 rbind(contrast(emm, method = "pairwise", by = c("dli", "time.point"))[c(2,4,6,8,9,11,13,15)], adjust = "fdr")
 
+
+  #Coral growth rate percent differences between C-D
+      #calc percent difference between each set of treatments across 2 months,(Growth C - Growth for D)/Growth for            D]*100%
+    mean.growth<-data.frame(emm) #make df from fitted emmeans
+
+    mean.grow.all<-mean.growth %>%
+     group_by(dli, dom, time.point) %>%
+       summarise(meangr = mean(emmean)) %>%
+          pivot_wider(names_from = dom, values_from=meangr)%>%
+           mutate(percent=((((C-D)/D))*100)) 
+    
+    
+    
+  
+# Get model outputs for time.point comparision
 emm <- emmeans(mod, ~ dom|time.point, at = list(dli = sort(unique(gr$dli))))
 rbind(contrast(emm, method = "pairwise", by = c( "time.point")), adjust = "fdr")
 
 
-#### ROSS how to do pairwise comparing DLIs within a symbiont group AT each time point...
-emm <- emmeans(mod, ~ dom*dli|time.point, at = list(dli = sort(unique(gr$dli))))
-options(max.print = 10000)  
+# Get model outputs for light treatment comparision (not time, no dom)
+emm <- emmeans(mod, ~ dli, at = list(dli = sort(unique(gr$dli))))
 rbind(contrast(emm, method = "pairwise", by = c( "time.point")), adjust = "fdr")
-
-#################This seems impossible - ALL are <.0001.... 
-rbind(contrast(emm, method = "pairwise", by = c( "time.point"))[c(33,37,41,46,50,54,79,83,88,92,109,114,124,128,132,139,143,147,178,182,189,193,216,223)], adjust = "fdr")
-
-
-
-
-
-
-
-
 
 # Get fitted values to plot
 pred <- tidyr::expand(grres.f, dom, time.point, dli = seq(0.331, 4.13, len = 101))
@@ -355,7 +347,7 @@ fig2 <- ggdraw(grplot) +
   draw_plot(t2tempplot, 0.83, 0.6, 0.3, 0.3, hjust = 1); fig2
 
 
-ggsave(fig2, filename = "output/figure2.png", width = 174, height = 90, units = "mm")
+#ggsave(fig2, filename = "output/figure2.png", width = 174, height = 90, units = "mm")
 
 #add astrix
 ann_text <- data.frame(dli = 1.4,growth.rate = 4.5,lab = "text",
@@ -367,12 +359,13 @@ fig2+  annotate(geom = "text", x = 3, y = 2, label = "TEST", adj = 0.5, size = 5
 
 
 
+library(ggpubr)
+library(rstatix)
 
 
 
 
-
-ggsave(fig2, filename = "output/figure2.pdf", width = 174, height = 90, units = "mm")
+#ggsave(fig2, filename = "output/figure2.pdf", width = 174, height = 90, units = "mm")
 
 ```
 
@@ -394,10 +387,6 @@ p1<- ggviolin(qPCR.df, x = "dom", y = "propD",
 #ggsave(p1, filename = "output/figure_qPCR.pdf", width = 174, height = 90, units = "mm")
 
 ```
-
-
-
-
 
 
 #growth Revisions.1 Just for reviewer (keep?) THIS AND NEXT SHOWS THAT STORY CHANGES IF WE REMOVE DATA...
@@ -465,4 +454,6 @@ fig2 <- ggdraw(grplot) +
   draw_plot(t2tempplot, 0.83, 0.6, 0.3, 0.3, hjust = 1); fig2
 
 #ggsave(fig2, filename = "output/figure2.tiff", width = 174, height = 90, units = "mm")
+
+
 ```

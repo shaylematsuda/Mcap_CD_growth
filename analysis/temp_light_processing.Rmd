@@ -424,20 +424,24 @@ temp_plot<-ggplot(data=Mcap.temp.meta.melt, aes(x=datetime, y=temp)) +
 #summary T0-T1
 Mcap.temp.T1 <- Mcap.temp.meta.melt %>%
                         filter(datetime >= as.Date('2017-10-29') & datetime <= as.Date('2017-11-29')) #
-
-#mean of T0-T1
+#mean and median 
 Mcap.temp.T1 %>%
-  #group_by(logger) %>%                                          # group by shade treatment
-  summarise(meantemp = mean(temp, na.rm=T), sd=sd(temp, na.rm=T))  
+  summarise(meantemp = mean(temp, na.rm=T), sd=sd(temp, na.rm=T)) 
+Mcap.temp.T1 %>%
+  summarise(mediantemp = median(temp, na.rm=T), sd=sd(temp, na.rm=T))  
+Mcap.temp.T1 %>%
+  summarise(rangetemp = range(temp, na.rm=T), sd=sd(temp, na.rm=T))  
 
 #summary T1-T2
-Mcap.temp.T2 <- Mcap.temp.meta.melt %>%
+ Mcap.temp.meta.melt %>%
                         filter(datetime >= as.Date('2017-11-29') & datetime <= as.Date('2018-01-07')) #
-
-#mean of T1-T2
+#mean and median of T1-T2
 Mcap.temp.T2 %>%
-  #group_by(logger) %>%                                         
-  summarise(meantemp = mean(temp, na.rm=T), sd=sd(temp, na.rm=T))  
+  summarise(meantemp = mean(temp, na.rm=T), sd=sd(temp, na.rm=T)) 
+Mcap.temp.T2 %>%
+  summarise(mediantemp = median(temp, na.rm=T), sd=sd(temp, na.rm=T)) 
+Mcap.temp.T2 %>%
+  summarise(rangetemp = range(temp, na.rm=T), sd=sd(temp, na.rm=T)) 
 
 ```
 
@@ -473,9 +477,6 @@ mok4<-mok4%>%select(month, avg_temp)
 mok5<-mok4 %>%
   group_by(month) %>%
   dplyr::summarise(avg_temp = mean(avg_temp, na.rm = TRUE), .groups = "drop")
-
-
-#test
 
 #load data
 
