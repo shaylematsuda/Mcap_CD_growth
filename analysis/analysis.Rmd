@@ -70,9 +70,6 @@ df.mort %>%
   summarise(mean = median(mortality, na.rm = T),
             iqr = paste0(quantile(mortality, probs = c(0.25, 0.75), na.rm = T), collapse = "-"))
 
-
-
-
 # arcsinsqrt transform and get T2 only
 df.mort.T2 <- filter(df.mort, time.point == "T2") %>% mutate(asin = asin(sqrt(mortality/100)))
 
