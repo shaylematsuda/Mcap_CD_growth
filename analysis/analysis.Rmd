@@ -386,6 +386,22 @@ p1<- ggviolin(qPCR.df, x = "dom", y = "propD",
 
 #ggsave(p1, filename = "output/figure_qPCR.pdf", width = 174, height = 90, units = "mm")
 
+
+# Calculate the mean and median percent D in C31-n and D glynnii-dom genotypes
+
+qPCR.df.propD<-qPCR.df %>% 
+  dplyr::select(-c("frag.id","light.level","big.tank", "tank","Dry.Weigh.g","time.point")) 
+qPCR.df.propD<-na.omit(qPCR.df.propD)
+
+qPCR.df.propD
+qPCR.df.propD2<-qPCR.df.propD %>%
+  group_by(genotype, dom)%>%
+   summarise(meanD = mean(propD))
+     
+qPCR.df.propD2 %>%
+  group_by(dom)%>%
+    summarise(medD = median(meanD)) 
+
 ```
 
 
