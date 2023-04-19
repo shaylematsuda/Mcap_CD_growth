@@ -335,19 +335,6 @@ fig2 <- ggdraw(grplot) +
 #make boxplot df.mort.T2
 library(ggpubr)
 
-qPCR.df <- df %>% # make a copy
-  dplyr::select(-c("days","notes","mix", "mortality")) 
-qPCR.df<-na.omit(qPCR.df)
-
-p <- ggplot(qPCR.df, aes(x=dom, y=propD)) + 
-  geom_boxplot();p
-
-p1<- ggviolin(qPCR.df, x = "dom", y = "propD",
-   add = "boxplot", fill = "dom");p1
-
-#ggsave(p1, filename = "output/figure_qPCR.pdf", width = 174, height = 90, units = "mm")
-
-
 # Calculate the mean and median percent D in C31-n and D glynnii-dom genotypes
 
 qPCR.df.propD<-qPCR.df %>% 
@@ -362,6 +349,22 @@ qPCR.df.propD2<-qPCR.df.propD %>%
 qPCR.df.propD2 %>%
   group_by(dom)%>%
     summarise(medD = median(meanD)) 
+
+
+# qPCR.df <- df %>% # make a copy
+#   dplyr::select(-c("days","notes","mix", "mortality")) 
+# qPCR.df<-na.omit(qPCR.df)
+
+p <- ggplot(qPCR.df.propD2, aes(x=dom, y=meanD)) + 
+  geom_boxplot();p
+
+p1<- ggviolin(qPCR.df.propD2, x = "dom", y = "meanD",
+   add = "boxplot", fill = "dom")+
+  coord_cartesian(ylim = c(-0.1,1.3))+
+  theme(legend.position = 'none');p1
+
+#ggsave(p1, filename = "output/figure_qPCR.pdf", width = 174, height = 90, units = "mm")
+
 
 ```
 
