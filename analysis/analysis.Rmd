@@ -363,7 +363,7 @@ p1<- ggviolin(qPCR.df.propD2, x = "dom", y = "meanD",
   coord_cartesian(ylim = c(-0.1,1.3))+
   theme(legend.position = 'none');p1
 
-#ggsave(p1, filename = "output/figure_qPCR.pdf", width = 174, height = 90, units = "mm")
+ggsave(p1, filename = "output/figure_qPCR.png", width = 174, height = 300, units = "mm")
 
 
 ```
