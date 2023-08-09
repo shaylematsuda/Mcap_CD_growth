@@ -184,6 +184,146 @@ Mcap.light.2.melt.meta <- Mcap.light.2.melt.meta %>%
                                 date(datetime) >="2017-11-29" ~ "T2"))
 ```
 
+# Acclimation logger light only
+```{r}
+
+# trim out the time frame of the experiment, Oct 29-Jan 8. and remove data during readout times. 
+loggers_wide.Accli.Accli <- loggers_wide.Accli %>%
+                        filter(datetime >= as.Date('2017-10-22') & datetime <= as.Date('2018-10-30')) #
+  loggers_wide.Accli$date<-date(loggers_wide.Accli$datetime) #pull out date
+
+#cut out times when data was pulled from logger, #this removes some of it but not all and not sure why but oh well?
+  loggers_wide.Accli<-loggers_wide.Accli%>%
+     filter(!(date == '2017-11-01'))%>%
+     filter(!(date == '2017-11-18'))%>%
+     filter(!(date == '2017-11-29'))%>%
+     filter(!(date == '2017-11-04'))%>%
+     filter(!(date == '2017-11-06'))%>%
+     filter(!(date == '2017-12-07'))%>%
+     filter(!(date == '2017-12-08'))
+
+# save the wide version of the file to CSV
+#write_csv(loggers_wide.Accli,"loggers_wide.Accli_20220713.csv")
+
+#REMOVE LOGGER 6377 no cal file
+loggers_wide.Accli = subset(loggers_wide.Accli, select = -c(logger_6377) )
+Mcap.light.Accli<-loggers_wide.Accli #make a copy
+
+##############
+#Logger Calibration
+
+# logger 2488 calibration: y=0.06069x R^2=0.999
+Mcap.light.Accli$logger_2488CAL <- Mcap.light.Accli$logger_2488 * 0.06069
+# logger 6378 calibration: y=0.1182x R^2=0.999
+Mcap.light.Accli$logger_6378CAL <- Mcap.light.Accli$logger_6378 * 0.1182
+# logger 7272 calibration: y=0.06658x R^2=0.999
+Mcap.light.Accli$logger_7272CAL <- Mcap.light.Accli$logger_7272 * 0.06658
+# logger 7274 calibration: y=0.06628x R^2=0.999
+Mcap.light.Accli$logger_7274CAL <- Mcap.light.Accli$logger_7274 * 0.06628
+# logger 7277 calibration: y=0.06787x R^2=0.999
+Mcap.light.Accli$logger_7277CAL <- Mcap.light.Accli$logger_7277 * 0.06787
+# logger 7278 calibration: y=0.05946x R^2=0.999
+Mcap.light.Accli$logger_7278CAL <- Mcap.light.Accli$logger_7278 * 0.05946
+# logger 7279 calibration: y=0.07278x R^2=0.999
+Mcap.light.Accli$logger_7279CAL <- Mcap.light.Accli$logger_7279 * 0.07278
+# logger 7280 calibration: y=0.06481x R^2=0.999
+Mcap.light.Accli$logger_7280CAL <- Mcap.light.Accli$logger_7280 * 0.06481
+# logger 10956 calibration: y=0.05712x R^2=1
+Mcap.light.Accli$logger_10956CAL <- Mcap.light.Accli$logger_10956 * 0.05712
+# logger 10957 calibration: y=0.05758x R^2=0.999
+Mcap.light.Accli$logger_10957CAL <- Mcap.light.Accli$logger_10957 * 0.05758
+# logger 10959 calibration: y=0.06052x R^2=1
+Mcap.light.Accli$logger_10959CAL <- Mcap.light.Accli$logger_10959 * 0.06052
+
+Mcap.light.Accli.2<- subset(Mcap.light.Accli, select = c( 1, 18:28)) #keep cols you need
+
+logger.df.accli<-read.csv("data/metadata/UROP_logger_locations.csv") #read in logger tank locations
+
+Mcap.light.Accli.2.melt<- #melt the df and then add metadata
+  Mcap.light.Accli.2%>% 
+   pivot_longer(
+    cols=!datetime,
+    names_to="Light.logger",
+    values_to = "Light")
+
+#merge with metadata
+Mcap.light.Accli.2.melt.meta<-inner_join(Mcap.light.Accli.2.melt, logger.df.accli, by="Light.logger")
+Mcap.light.Accli.2.melt.meta$Light.logger<-as.factor(Mcap.light.Accli.2.melt.meta$Light.logger)
+Mcap.light.Accli.2.melt.meta$Shade<-as.factor(Mcap.light.Accli.2.melt.meta$Shade)
+Mcap.light.Accli.2.melt.meta$Temp.logger<-as.factor(Mcap.light.Accli.2.melt.meta$Temp.logger)
+Mcap.light.Accli.2.melt.meta$Tank<-as.factor(Mcap.light.Accli.2.melt.meta$Tank)
+
+light_plot<-ggplot(data=Mcap.light.Accli.2.melt.meta, aes(x=datetime, y=Light, group = Shade, color=Shade)) +
+  geom_line(aes(color=Shade), linetype=2, show.legend = T)+
+  xlab("") + 
+  theme_bw() + 
+  theme(axis.line = element_line(color = 'black'), 
+        axis.title=element_text(size=14,face="bold"), 
+        panel.border = element_blank(),
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(), 
+        text = element_text(size=18),  
+        plot.background =element_blank(), 
+        legend.key = element_blank()) + 
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(),
+        panel.background = element_rect(colour = "black", size=1))+
+  theme(aspect.ratio=1)+
+  ylab(expression(paste("Light"))) +
+  ggtitle("UROP light")+
+  theme(plot.title = element_text(size=20, face = "italic"));light_plot 
+
+light_plot+facet_wrap(~Shade, scales = "free_y")
+light_plot + xlim(as_datetime("2017-11-30"),  as_datetime("2017-12-01"))
+
+light_plot<-ggplot(data=Mcap.light.Accli.2.melt.meta, aes(x=datetime, y=Light, color=Light.logger)) +
+  geom_line(aes(color=Light.logger), linetype=2, show.legend = T)+
+  xlab("") + 
+  theme_bw() + 
+  theme(axis.line = element_line(color = 'black'), 
+        axis.title=element_text(size=14,face="bold"), 
+        panel.border = element_blank(), 
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(), 
+        text = element_text(size=18),  
+        plot.background =element_blank(), 
+        legend.key = element_blank()) + 
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(),
+        panel.background = element_rect(colour = "black", size=1))+
+  theme(aspect.ratio=1)+
+  ylab(expression(paste("Light"))) +
+  ggtitle("UROP light")+
+  theme(plot.title = element_text(size=20, face = "italic"));light_plot 
+
+light_plot+facet_wrap(~Shade)
+light_plot + xlim(as_datetime("2017-10-22"),  as_datetime("2017-10-30"))
+
+light_plot<-ggplot(data=Mcap.light.Accli.2.melt.meta, aes(x=datetime, y=Light, group = Shade, color=Shade)) +
+  geom_smooth(aes(color=Shade), linetype=2, show.legend = T)+
+  xlab("") + 
+  theme_bw() + 
+  theme(axis.line = element_line(color = 'black'), 
+        axis.title=element_text(size=14,face="bold"), 
+        panel.border = element_blank(), 
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(), 
+        text = element_text(size=18),  
+        plot.background =element_blank(), 
+        legend.key = element_blank()) + 
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(),
+        panel.background = element_rect(colour = "black", size=1))+
+  theme(aspect.ratio=1)+
+  ylab(expression(paste("Light"))) +
+  ggtitle("Light")+
+  theme(plot.title = element_text(size=20, face = "italic"));light_plot
+
+Mcap.light.Accli.2.melt.meta <- Mcap.light.Accli.2.melt.meta %>%
+  mutate(time.point = case_when(date(datetime) < "2017-10-22" ~ "T1",
+                                date(datetime) >="2017-10-28" ~ "T2"))
+```
+Decide how to pull the data you need
 
 
 ######Do we need models for Light treatments to say they are different.
