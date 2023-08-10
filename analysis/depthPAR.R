@@ -1,7 +1,7 @@
-# Kd(PAR) in Kaneohe Bay ranged from 0.2 to 0.35 (CISNet website, cited in Jacobson 2005).
+
 # PAR measured in at 2 meters depth shows annual mean of ~18 mol m-2 d-1 (Cunning et al. 2016 Fig. S2; Barott et al. 2021 Fig. S2)
 
-# Calculate surface PAR when PAR @ 2m is 18, with Kd 0.62 and Kd 0.37
+# Calculate surface PAR when PAR @ 2m is 18, with Kd 0.62 and Kd 0.37 (from Jacobson 2005, see jacobson_kd_data.csv)
 surfPAR <- function(Kd1, Kd2, zPAR, z) {
   surfPAR1 <- exp(z * Kd1) * zPAR
   surfPAR2 <- exp(z * Kd2) * zPAR
@@ -17,6 +17,7 @@ depthRange <- function(Kd1, Kd2, surfPAR, PAR) {
   return(c(z1, z2))
 }
 
+#
 # Lowest light treatment = 0.36 DLI
 depthRange(0.62, 0.37, 50, 0.36)       # 8.0 to 13.3 meters // 6.5 to 10.9 meters // 11.5 to 20.1 meters
 
@@ -30,6 +31,7 @@ depthRange(0.62, 0.37, 50, 1.55)       # 5.6 to 9.4 meters // 4.2 to 6.9 meters 
 depthRange(0.62, 0.37, 50, 3.8)        # 4.2 to 6.9 meters // 2.7 to 4.5 meters // 4.7 to 8.3 meters
 
 
+
 # What level of PAR corresponds to 4 meters?
 surfPAR = 50
 Kd1 = 0.62
@@ -41,3 +43,4 @@ surfPAR / exp(z * Kd2)
 z = 10
 surfPAR / exp(z * Kd1)
 surfPAR / exp(z * Kd2)
+
