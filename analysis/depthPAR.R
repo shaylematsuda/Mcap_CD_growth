@@ -23,15 +23,15 @@ depthRange(0.62, 0.37, 20, 0.36)       # 6.5 to 10.9 meters  <- are these wrong 
 depthRange(0.35, 0.2, 20, 0.36)       # 11.5 to 20.1 meters 
 
 # Next light treatment = 0.76 DLI
-depthRange(0.62, 0.37, 20, 0.76)       # 5.3 to 8.8 meters 
+depthRange(0.62, 0.37, 20, 0.76)       # 5.3 to 8.8 meters <- wrong?
 depthRange(0.35, 0.2, 20, 0.76)       # 9.3 to 16.4 meters
 
 # Next light treatment = 1.55 DLI
-depthRange(0.62, 0.37, 20, 1.55)       # 4.2 to 6.9 meters
+depthRange(0.62, 0.37, 20, 1.55)       # 4.2 to 6.9 meters <- wrong?
 depthRange(0.35, 0.2, 20, 1.55)       # 7.3 to 12.8 meters
 
 # Highest light treatment = 3.8 DLI
-depthRange(0.62, 0.37, 20, 3.8)        # 2.7 to 4.5 meters
+depthRange(0.62, 0.37, 20, 3.8)        # 2.7 to 4.5 meters <- wrong?
 depthRange(0.35, 0.2, 20, 3.8)        # 4.7 to 8.3 meters
 
 ###### NEW section - if we use the kds from the depth range we have above to calc surf DLI ####
