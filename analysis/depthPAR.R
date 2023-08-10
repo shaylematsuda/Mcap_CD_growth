@@ -34,3 +34,20 @@ depthRange(0.35, 0.2, 20, 1.55)       # 7.3 to 12.8 meters
 depthRange(0.62, 0.37, 20, 3.8)        # 2.7 to 4.5 meters
 depthRange(0.35, 0.2, 20, 3.8)        # 4.7 to 8.3 meters
 
+###### NEW section - if we use the kds from the depth range we have above to calc surf DLI ####
+
+surfPAR(0.62, 0.37, 12, 2)   # surface PAR is 25 - 41, so then surf is 32
+
+#if we use 32 instead of 32, the above calcs are now...
+
+# Lowest light treatment = 0.36 DLI
+depthRange(0.62, 0.37, 32, 0.36)       # 7.24 to 12.13 meters
+
+# Next light treatment = 0.76 DLI
+depthRange(0.62, 0.37, 32, 0.76)       # 6.03 to 10.11 meters 
+
+# Next light treatment = 1.55 DLI
+depthRange(0.62, 0.37, 32, 1.55)       # 4.88 to 8.18 meters
+
+# Highest light treatment = 3.8 DLI
+depthRange(0.62, 0.37, 32, 3.8)        # 3.44 to 5.76 meters
