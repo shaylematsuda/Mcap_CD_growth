@@ -19,8 +19,8 @@ depthRange <- function(Kd1, Kd2, surfPAR, PAR) {
 
 #
 # Lowest light treatment = 0.36 DLI
-depthRange(0.62, 0.37, 20, 0.36)       # 6.5 to 10.9 meters 
-depthRange(0.35, 0.2, 20, 0.36)       # 11.5 to 20.1 meters
+depthRange(0.62, 0.37, 20, 0.36)       # 6.5 to 10.9 meters  <- are these wrong since the Surf Val is wrong? it was calculated using the other set of dks
+depthRange(0.35, 0.2, 20, 0.36)       # 11.5 to 20.1 meters 
 
 # Next light treatment = 0.76 DLI
 depthRange(0.62, 0.37, 20, 0.76)       # 5.3 to 8.8 meters 
