@@ -1,16 +1,16 @@
-# Kd(PAR) in Kaneohe Bay ranged from 0.2 to 0.35 (CISNet website, cited in Jacobson 2005).
-# PAR measured in Nov/Dec at 2 meters depth = ~12 DLI (Cunning et al. 2016 Fig. S2; Barott et al. 2021 Fig. S2)
 
-# Calculate surface PAR when PAR @ 2m is 12, with Kd 0.2 and Kd 0.35
+# PAR measured in at 2 meters depth shows annual mean of ~18 mol m-2 d-1 (Cunning et al. 2016 Fig. S2; Barott et al. 2021 Fig. S2)
+
+# Calculate surface PAR when PAR @ 2m is 18, with Kd 0.62 and Kd 0.37 (from Jacobson 2005, see jacobson_kd_data.csv)
 surfPAR <- function(Kd1, Kd2, zPAR, z) {
   surfPAR1 <- exp(z * Kd1) * zPAR
   surfPAR2 <- exp(z * Kd2) * zPAR
   return(c(surfPAR1, surfPAR2))
 }
-surfPAR(0.2, 0.35, 12, 2)   # surface PAR is 17 - 24. Letʻs go with a value of 20 for now.
+surfPAR(0.62, 0.37, 18, 2)   # surface PAR is 37 - 62. Use middle of range = 50
 
 
-# Calculate depth range for a measured PAR, with a given surface PAR, and Kd = 0.35 and Kd = 0.2
+# Calculate depth range for a measured PAR, with a given surface PAR, and Kd = 0.37 and Kd = 0.62
 depthRange <- function(Kd1, Kd2, surfPAR, PAR) {
   z1 <- 1 / Kd1 * log (surfPAR/PAR)
   z2 <- 1 / Kd2 * log (surfPAR/PAR)
@@ -19,35 +19,41 @@ depthRange <- function(Kd1, Kd2, surfPAR, PAR) {
 
 #
 # Lowest light treatment = 0.36 DLI
-depthRange(0.62, 0.37, 20, 0.36)       # 6.5 to 10.9 meters  <- are these wrong since the Surf Val is wrong? it was calculated using the other set of dks
-depthRange(0.35, 0.2, 20, 0.36)       # 11.5 to 20.1 meters 
+depthRange(0.62, 0.37, 50, 0.36)       # 8.0 to 13.3 meters // 6.5 to 10.9 meters // 11.5 to 20.1 meters
 
 # Next light treatment = 0.76 DLI
+<<<<<<< HEAD
 depthRange(0.62, 0.37, 20, 0.76)       # 5.3 to 8.8 meters <- wrong?
-depthRange(0.35, 0.2, 20, 0.76)       # 9.3 to 16.4 meters
+#depthRange(0.35, 0.2, 20, 0.76)       # 9.3 to 16.4 meters
 
 # Next light treatment = 1.55 DLI
 depthRange(0.62, 0.37, 20, 1.55)       # 4.2 to 6.9 meters <- wrong?
-depthRange(0.35, 0.2, 20, 1.55)       # 7.3 to 12.8 meters
+#depthRange(0.35, 0.2, 20, 1.55)       # 7.3 to 12.8 meters
 
 # Highest light treatment = 3.8 DLI
 depthRange(0.62, 0.37, 20, 3.8)        # 2.7 to 4.5 meters <- wrong?
-depthRange(0.35, 0.2, 20, 3.8)        # 4.7 to 8.3 meters
-
-###### NEW section - if we use the kds from the depth range we have above to calc surf DLI ####
-
-surfPAR(0.62, 0.37, 12, 2)   # surface PAR is 25 - 41, so then surf is 32
-
-#if we use 32 instead of 32, the above calcs are now...
-
-# Lowest light treatment = 0.36 DLI
-depthRange(0.62, 0.37, 32, 0.36)       # 7.24 to 12.13 meters
-
-# Next light treatment = 0.76 DLI
-depthRange(0.62, 0.37, 32, 0.76)       # 6.03 to 10.11 meters 
+#depthRange(0.35, 0.2, 20, 3.8)        # 4.7 to 8.3 meters
+=======
+depthRange(0.62, 0.37, 50, 0.76)       # 6.8 to 11.3 meters // 5.3 to 8.8 meters // 9.3 to 16.4 meters
 
 # Next light treatment = 1.55 DLI
-depthRange(0.62, 0.37, 32, 1.55)       # 4.88 to 8.18 meters
+depthRange(0.62, 0.37, 50, 1.55)       # 5.6 to 9.4 meters // 4.2 to 6.9 meters // 7.3 to 12.8 meters
 
 # Highest light treatment = 3.8 DLI
-depthRange(0.62, 0.37, 32, 3.8)        # 3.44 to 5.76 meters
+depthRange(0.62, 0.37, 50, 3.8)        # 4.2 to 6.9 meters // 2.7 to 4.5 meters // 4.7 to 8.3 meters
+>>>>>>> 18314efec918bab1b9bb3536897da23b5edb48fd
+
+
+
+# What level of PAR corresponds to 4 meters?
+surfPAR = 50
+Kd1 = 0.62
+Kd2 = 0.37
+z = 4
+surfPAR / exp(z * Kd1)
+surfPAR / exp(z * Kd2)
+
+z = 10
+surfPAR / exp(z * Kd1)
+surfPAR / exp(z * Kd2)
+

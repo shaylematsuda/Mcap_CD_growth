@@ -35,6 +35,18 @@ theme_custom <- function() {
     )
 }
 ```
+one of these packages needed for qqplot figure out which and then delete
+```{r}
+# library(car)
+# library(gridExtra)
+# library(multcomp)
+# library(reshape)
+# library(factoextra)
+# library(reshape2)
+# library(vegan)
+# library(pairwiseAdonis)
+# library("scales")
+```
 
 # Load in data
 ```{r}
@@ -69,6 +81,9 @@ df.mort %>%
   group_by(dli, dom) %>%
   summarise(mean = median(mortality, na.rm = T),
             iqr = paste0(quantile(mortality, probs = c(0.25, 0.75), na.rm = T), collapse = "-"))
+
+
+
 
 # arcsinsqrt transform and get T2 only
 df.mort.T2 <- filter(df.mort, time.point == "T2") %>% mutate(asin = asin(sqrt(mortality/100)))
@@ -114,18 +129,7 @@ fig1<-ggplot(df.mort.T2, aes(x = light.level, fill = mortcat)) +
   panel.background = element_blank(), axis.line = element_line(colour = "black"))+
   geom_bar(position = "fill");fig1
 
-#ggsave(fig1, filename = "output/figure1.pdf", width = 84, height = 84, units= "mm")
-
-
-
-#average tissue loss per treatment * dom 
-df.mort.T2 %>%
-  group_by(light.level,dom) %>%
-  dplyr::summarise(avg_loss = mean(mortality, na.rm = TRUE), .groups = "drop")
-#median
-df.mort.T2 %>%
-  group_by(light.level,dom) %>%
-  dplyr::summarise(median = median(mortality, na.rm = TRUE), .groups = "drop")
+ggsave(fig1, filename = "output/figure1.pdf", width = 84, height = 84, units= "mm")
 
 ```
 
@@ -140,7 +144,7 @@ hist(residuals(mod2)) #residuals not normal
 emm2 <- emmeans(mod2, ~ dom*dli, at = list(dli = sort(unique(df.mort.T2test$dli))))
 rbind(contrast(emm2, method = "pairwise", by = c("dli")), adjust = "fdr") # C-D sig diff only low light
 ```
-# sumbission 1 mortality  - Delete before Zenodo
+# sumbission 1 mortality  - Delete before resubmission
 ```{r}
 
 # Fit glm - quasibinomial
@@ -236,7 +240,16 @@ nrow(grres) - nrow(grres.f)   # Filtered out 6 observations
 
 ##############################################
 
-    
+# Summary stats
+grres.f %>%
+  group_by(light.level, time.point) %>%
+  summarise(meangr = mean(growth.rate))
+
+grres.f %>%
+  group_by(light.level, time.point, dom) %>%
+  summarise(meangr = mean(growth.rate))
+
+
 # Run stats
 mod <- lmer(growth.rate ~ dom * dli * time.point + (1|genotype/frag.id) + (1|tank), data = grres.f)
 anova(mod)
@@ -252,29 +265,25 @@ emm <- emmeans(mod, ~ dom*dli|time.point, at = list(dli = sort(unique(gr$dli))))
 # pairwise comparisons -- only the dli:timepoint combos that actually appear in the data
 rbind(contrast(emm, method = "pairwise", by = c("dli", "time.point"))[c(2,4,6,8,9,11,13,15)], adjust = "fdr")
 
-
-  #Coral growth rate percent differences between C-D
-      #calc percent difference between each set of treatments across 2 months,(Growth C - Growth for D)/Growth for            D]*100%
-    mean.growth<-data.frame(emm) #make df from fitted emmeans
-
-    mean.grow.all<-mean.growth %>%
-     group_by(dli, dom, time.point) %>%
-       summarise(meangr = mean(emmean)) %>%
-          pivot_wider(names_from = dom, values_from=meangr)%>%
-           mutate(percent=((((abs(C-D))/D))*100))
-    
-    #growth of all corals across whole experimemt at 4 avg DLIs
-    emm <- emmeans(mod, ~ dli, at = list(dli = c(0.36, 0.76, 1.55, 3.80)))
-
-    
-# Get model outputs for time.point comparision
 emm <- emmeans(mod, ~ dom|time.point, at = list(dli = sort(unique(gr$dli))))
 rbind(contrast(emm, method = "pairwise", by = c( "time.point")), adjust = "fdr")
 
 
-# Get model outputs for light treatment comparision (not time, no dom)
-emm <- emmeans(mod, ~ dli, at = list(dli = sort(unique(gr$dli))))
+#### ROSS how to do pairwise comparing DLIs within a symbiont group AT each time point...
+emm <- emmeans(mod, ~ dom*dli|time.point, at = list(dli = sort(unique(gr$dli))))
+options(max.print = 10000)  
 rbind(contrast(emm, method = "pairwise", by = c( "time.point")), adjust = "fdr")
+
+#################This seems impossible - ALL are <.0001.... 
+rbind(contrast(emm, method = "pairwise", by = c( "time.point"))[c(33,37,41,46,50,54,79,83,88,92,109,114,124,128,132,139,143,147,178,182,189,193,216,223)], adjust = "fdr")
+
+
+
+
+
+
+
+
 
 # Get fitted values to plot
 pred <- tidyr::expand(grres.f, dom, time.point, dli = seq(0.331, 4.13, len = 101))
@@ -326,7 +335,24 @@ fig2 <- ggdraw(grplot) +
   draw_plot(t2tempplot, 0.83, 0.6, 0.3, 0.3, hjust = 1); fig2
 
 
-#ggsave(fig2, filename = "output/figure2.tiff", width = 174, height = 90, units = "mm")
+ggsave(fig2, filename = "output/figure2.png", width = 174, height = 90, units = "mm")
+
+#add astrix
+ann_text <- data.frame(dli = 1.4,growth.rate = 4.5,lab = "text",
+                       time.point = factor("T2",levels = c("T1","T2")))
+ann_text
+fig2+ geom_text(data = ann_text,label = "text")
+
+fig2+  annotate(geom = "text", x = 3, y = 2, label = "TEST", adj = 0.5, size = 5, fontface = "italic") 
+
+
+
+
+
+
+
+
+ggsave(fig2, filename = "output/figure2.pdf", width = 174, height = 90, units = "mm")
 
 ```
 
@@ -335,38 +361,23 @@ fig2 <- ggdraw(grplot) +
 #make boxplot df.mort.T2
 library(ggpubr)
 
-# Calculate the mean and median percent D in C31-n and D glynnii-dom genotypes
+qPCR.df <- df %>% # make a copy
+  dplyr::select(-c("days","notes","mix", "mortality")) 
+qPCR.df<-na.omit(qPCR.df)
 
-qPCR.df.propD<-qPCR.df %>% 
-  dplyr::select(-c("frag.id","light.level","big.tank", "tank","Dry.Weigh.g","time.point")) 
-qPCR.df.propD<-na.omit(qPCR.df.propD)
-
-qPCR.df.propD
-qPCR.df.propD2<-qPCR.df.propD %>%
-  group_by(genotype, dom)%>%
-   summarise(meanD = mean(propD))
-     
-qPCR.df.propD2 %>%
-  group_by(dom)%>%
-    summarise(medD = median(meanD)) 
-
-
-# qPCR.df <- df %>% # make a copy
-#   dplyr::select(-c("days","notes","mix", "mortality")) 
-# qPCR.df<-na.omit(qPCR.df)
-
-p <- ggplot(qPCR.df.propD2, aes(x=dom, y=meanD)) + 
+p <- ggplot(qPCR.df, aes(x=dom, y=propD)) + 
   geom_boxplot();p
 
-p1<- ggviolin(qPCR.df.propD2, x = "dom", y = "meanD",
-   add = "boxplot", fill = "dom")+
-  coord_cartesian(ylim = c(-0.1,1.3))+
-  theme(legend.position = 'none');p1
+p1<- ggviolin(qPCR.df, x = "dom", y = "propD",
+   add = "boxplot", fill = "dom");p1
 
-ggsave(p1, filename = "output/figure_qPCR.png", width = 174, height = 300, units = "mm")
-
+#ggsave(p1, filename = "output/figure_qPCR.pdf", width = 174, height = 90, units = "mm")
 
 ```
+
+
+
+
 
 
 #growth Revisions.1 Just for reviewer (keep?) THIS AND NEXT SHOWS THAT STORY CHANGES IF WE REMOVE DATA...
@@ -434,6 +445,4 @@ fig2 <- ggdraw(grplot) +
   draw_plot(t2tempplot, 0.83, 0.6, 0.3, 0.3, hjust = 1); fig2
 
 #ggsave(fig2, filename = "output/figure2.tiff", width = 174, height = 90, units = "mm")
-
-
 ```
