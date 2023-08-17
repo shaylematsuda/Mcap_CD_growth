@@ -373,6 +373,21 @@ p1<- ggviolin(qPCR.df, x = "dom", y = "propD",
 
 #ggsave(p1, filename = "output/figure_qPCR.pdf", width = 174, height = 90, units = "mm")
 
+# figure out median % C/D in C- and D-dom genotypes
+qPCR.df.2<-qPCR.df #make a copy
+qPCR.df.2<-select(qPCR.df.2, c('frag.id','propD', 'dom'))
+percentD<-aggregate(qPCR.df.2$propD, list(qPCR.df.2$frag.id,qPCR.df.2$dom), FUN=mean) 
+
+Cdom<-subset(percentD, Group.2=="C")
+  #Cdom.nodom<-subset(Cdom, x>0)
+Ddom<-subset(percentD, Group.2=="D")
+Ddom$percentC<-1-Ddom$x
+  #Ddom.nodom<-subset(Cdom, x>0)
+
+summarise(Cdom, median = median(x))
+summarise(Ddom, median = median(percentC))
+
+
 ```
 
 
