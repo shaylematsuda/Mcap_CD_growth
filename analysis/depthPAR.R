@@ -22,18 +22,6 @@ depthRange <- function(Kd1, Kd2, surfPAR, PAR) {
 depthRange(0.62, 0.37, 50, 0.36)       # 8.0 to 13.3 meters // 6.5 to 10.9 meters // 11.5 to 20.1 meters
 
 # Next light treatment = 0.76 DLI
-<<<<<<< HEAD
-depthRange(0.62, 0.37, 20, 0.76)       # 5.3 to 8.8 meters <- wrong?
-#depthRange(0.35, 0.2, 20, 0.76)       # 9.3 to 16.4 meters
-
-# Next light treatment = 1.55 DLI
-depthRange(0.62, 0.37, 20, 1.55)       # 4.2 to 6.9 meters <- wrong?
-#depthRange(0.35, 0.2, 20, 1.55)       # 7.3 to 12.8 meters
-
-# Highest light treatment = 3.8 DLI
-depthRange(0.62, 0.37, 20, 3.8)        # 2.7 to 4.5 meters <- wrong?
-#depthRange(0.35, 0.2, 20, 3.8)        # 4.7 to 8.3 meters
-=======
 depthRange(0.62, 0.37, 50, 0.76)       # 6.8 to 11.3 meters // 5.3 to 8.8 meters // 9.3 to 16.4 meters
 
 # Next light treatment = 1.55 DLI
@@ -41,8 +29,6 @@ depthRange(0.62, 0.37, 50, 1.55)       # 5.6 to 9.4 meters // 4.2 to 6.9 meters 
 
 # Highest light treatment = 3.8 DLI
 depthRange(0.62, 0.37, 50, 3.8)        # 4.2 to 6.9 meters // 2.7 to 4.5 meters // 4.7 to 8.3 meters
->>>>>>> 18314efec918bab1b9bb3536897da23b5edb48fd
-
 
 
 # What level of PAR corresponds to 4 meters?
