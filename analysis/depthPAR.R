@@ -35,7 +35,6 @@ depthRange(0.62, 0.37, surfPAR, 1.55)       # 5.3 to 8.9 meters
 depthRange(0.62, 0.37, surfPAR, 3.8)        # 3.8 to 6.4 meters
 
 
-
 # What level of PAR corresponds to 4 meters?
 Kd1 = 0.62
 Kd2 = 0.37

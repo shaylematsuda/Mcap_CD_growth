@@ -269,13 +269,18 @@ emm <- emmeans(mod, ~ dom|time.point, at = list(dli = sort(unique(gr$dli))))
 rbind(contrast(emm, method = "pairwise", by = c( "time.point")), adjust = "fdr")
 
 
-#### ROSS how to do pairwise comparing DLIs within a symbiont group AT each time point...
-emm <- emmeans(mod, ~ dom*dli|time.point, at = list(dli = sort(unique(gr$dli))))
-options(max.print = 10000)  
-rbind(contrast(emm, method = "pairwise", by = c( "time.point")), adjust = "fdr")
+#### ROSS ####
+#how to do pairwise comparing DLIs within a symbiont group AT each time point...
 
-#################This seems impossible - ALL are <.0001.... 
-rbind(contrast(emm, method = "pairwise", by = c( "time.point"))[c(33,37,41,46,50,54,79,83,88,92,109,114,124,128,132,139,143,147,178,182,189,193,216,223)], adjust = "fdr")
+# emm <- emmeans(mod, ~ dom*dli|time.point, at = list(dli = sort(unique(gr$dli))))
+# options(max.print = 10000)  
+# rbind(contrast(emm, method = "pairwise", by = c( "time.point")), adjust = "fdr")
+# 
+# #################This seems impossible - ALL are <.0001.... 
+# rbind(contrast(emm, method = "pairwise", by = c( "time.point"))[c(33,37,41,46,50,54,79,83,88,92,109,114,124,128,132,139,143,147,178,182,189,193,216,223)], adjust = "fdr")
+
+
+
 
 
 
@@ -335,7 +340,7 @@ fig2 <- ggdraw(grplot) +
   draw_plot(t2tempplot, 0.83, 0.6, 0.3, 0.3, hjust = 1); fig2
 
 
-ggsave(fig2, filename = "output/figure2.png", width = 174, height = 90, units = "mm")
+#ggsave(fig2, filename = "output/figure2.png", width = 174, height = 90, units = "mm")
 
 #add astrix
 ann_text <- data.frame(dli = 1.4,growth.rate = 4.5,lab = "text",
@@ -346,13 +351,7 @@ fig2+ geom_text(data = ann_text,label = "text")
 fig2+  annotate(geom = "text", x = 3, y = 2, label = "TEST", adj = 0.5, size = 5, fontface = "italic") 
 
 
-
-
-
-
-
-
-ggsave(fig2, filename = "output/figure2.pdf", width = 174, height = 90, units = "mm")
+#ggsave(fig2, filename = "output/figure2.pdf", width = 174, height = 90, units = "mm")
 
 ```
 
@@ -372,6 +371,21 @@ p1<- ggviolin(qPCR.df, x = "dom", y = "propD",
    add = "boxplot", fill = "dom");p1
 
 #ggsave(p1, filename = "output/figure_qPCR.pdf", width = 174, height = 90, units = "mm")
+
+# figure out median % C/D in C- and D-dom genotypes
+qPCR.df.2<-qPCR.df #make a copy
+qPCR.df.2<-select(qPCR.df.2, c('frag.id','propD', 'dom'))
+percentD<-aggregate(qPCR.df.2$propD, list(qPCR.df.2$frag.id,qPCR.df.2$dom), FUN=mean) 
+
+Cdom<-subset(percentD, Group.2=="C")
+  #Cdom.nodom<-subset(Cdom, x>0)
+Ddom<-subset(percentD, Group.2=="D")
+Ddom$percentC<-1-Ddom$x
+  #Ddom.nodom<-subset(Cdom, x>0)
+
+summarise(Cdom, median = median(x))
+summarise(Ddom, median = median(percentC))
+
 
 ```
 

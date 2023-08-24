@@ -216,7 +216,7 @@ light_res_bytimepoint <- Mcap.light.2.melt.meta %>%
                                timepoint == FALSE ~ "T2"))
 
 # Write to file
-write_csv(light_res_bytimepoint, path = "data/processed/dli.csv")
+#write_csv(light_res_bytimepoint, path = "data/processed/dli.csv")
 
 #### calculate average daily maxima
 avg_daily_maxima <- Mcap.light.2.melt.meta %>%
@@ -424,20 +424,24 @@ temp_plot<-ggplot(data=Mcap.temp.meta.melt, aes(x=datetime, y=temp)) +
 #summary T0-T1
 Mcap.temp.T1 <- Mcap.temp.meta.melt %>%
                         filter(datetime >= as.Date('2017-10-29') & datetime <= as.Date('2017-11-29')) #
-
-#mean of T0-T1
+#mean and median 
 Mcap.temp.T1 %>%
-  #group_by(logger) %>%                                          # group by shade treatment
-  summarise(meantemp = mean(temp, na.rm=T), sd=sd(temp, na.rm=T))  
+  summarise(meantemp = mean(temp, na.rm=T), sd=sd(temp, na.rm=T)) 
+Mcap.temp.T1 %>%
+  summarise(mediantemp = median(temp, na.rm=T), sd=sd(temp, na.rm=T))  
+Mcap.temp.T1 %>%
+  summarise(rangetemp = range(temp, na.rm=T), sd=sd(temp, na.rm=T))  
 
 #summary T1-T2
-Mcap.temp.T2 <- Mcap.temp.meta.melt %>%
+ Mcap.temp.meta.melt %>%
                         filter(datetime >= as.Date('2017-11-29') & datetime <= as.Date('2018-01-07')) #
-
-#mean of T1-T2
+#mean and median of T1-T2
 Mcap.temp.T2 %>%
-  #group_by(logger) %>%                                         
-  summarise(meantemp = mean(temp, na.rm=T), sd=sd(temp, na.rm=T))  
+  summarise(meantemp = mean(temp, na.rm=T), sd=sd(temp, na.rm=T)) 
+Mcap.temp.T2 %>%
+  summarise(mediantemp = median(temp, na.rm=T), sd=sd(temp, na.rm=T)) 
+Mcap.temp.T2 %>%
+  summarise(rangetemp = range(temp, na.rm=T), sd=sd(temp, na.rm=T)) 
 
 ```
 
@@ -473,9 +477,6 @@ mok4<-mok4%>%select(month, avg_temp)
 mok5<-mok4 %>%
   group_by(month) %>%
   dplyr::summarise(avg_temp = mean(avg_temp, na.rm = TRUE), .groups = "drop")
-
-
-#test
 
 #load data
 
@@ -595,6 +596,204 @@ NOAA.df2<-NOAA.df %>%
   dplyr::summarise(avg_temp = mean(Temp, na.rm = TRUE), .groups = "drop")
 
 
+
+```
+
+# Light during acclimation only
+
+```{r}
+#load data
+csv_files <- dir_ls("data/light_logger_files",glob="*.CSV",recurse = TRUE)
+
+loggers <- map_dfr(csv_files,function(csv) {
+  logger_id <- path_ext_remove(path_file(csv))
+  if (str_detect(logger_id,"^(.+)_")) {
+    logger_id <- str_match(logger_id,"^(.+)_")[1,2]
+  }
+  return(
+    read_csv(csv,
+             skip = 9, # skip 9 rows
+             col_names = c("scan_number","date","time","raw","calibrated"), # name our columns
+             col_types = "nccnn") %>% 
+      mutate(across(where(is.character), str_trim)) %>% 
+      mutate(
+        datetime = parse_date_time(str_c(date," ",time), orders = c("d/m/y H:M:S","d/m/Y H:M:S"),tz="HST"),
+        logger = factor(str_c("logger_",logger_id))
+      ) %>%
+      dplyr::select(logger, datetime, raw, calibrated)  
+  )
+})
+
+loggers_wide <- loggers %>%
+  dplyr::select(-raw) %>% # get rid of the raw column
+  pivot_wider(names_from="logger",values_from="calibrated") %>%
+  arrange(datetime)
+
+
+# trim out the time frame of data for acclimation, Oct 22-28. and remove data during readout times. 
+loggers_wide <- loggers_wide %>%
+                        filter(datetime >= as.Date('2017-10-23') & datetime <= as.Date('2017-10-29')) #
+  loggers_wide$date<-date(loggers_wide$datetime) #pull out date
+
+#cut out times when data was pulled from logger, 
+  # loggers_wide<-loggers_wide%>%
+  #    filter(!(date == '2017-11-01'))%>%
+
+#REMOVE LOGGER 6377 no cal file
+loggers_wide = subset(loggers_wide, select = -c(logger_6377) )
+Mcap.light<-loggers_wide #make a copy
+
+##############
+#Logger Calibration
+
+# logger 2488 calibration: y=0.06069x R^2=0.999
+Mcap.light$logger_2488CAL <- Mcap.light$logger_2488 * 0.06069
+# logger 6378 calibration: y=0.1182x R^2=0.999
+Mcap.light$logger_6378CAL <- Mcap.light$logger_6378 * 0.1182
+# logger 7272 calibration: y=0.06658x R^2=0.999
+Mcap.light$logger_7272CAL <- Mcap.light$logger_7272 * 0.06658
+# logger 7274 calibration: y=0.06628x R^2=0.999
+Mcap.light$logger_7274CAL <- Mcap.light$logger_7274 * 0.06628
+# logger 7277 calibration: y=0.06787x R^2=0.999
+Mcap.light$logger_7277CAL <- Mcap.light$logger_7277 * 0.06787
+# logger 7278 calibration: y=0.05946x R^2=0.999
+Mcap.light$logger_7278CAL <- Mcap.light$logger_7278 * 0.05946
+# logger 7279 calibration: y=0.07278x R^2=0.999
+Mcap.light$logger_7279CAL <- Mcap.light$logger_7279 * 0.07278
+# logger 7280 calibration: y=0.06481x R^2=0.999
+Mcap.light$logger_7280CAL <- Mcap.light$logger_7280 * 0.06481
+# logger 10956 calibration: y=0.05712x R^2=1
+Mcap.light$logger_10956CAL <- Mcap.light$logger_10956 * 0.05712
+# logger 10957 calibration: y=0.05758x R^2=0.999
+Mcap.light$logger_10957CAL <- Mcap.light$logger_10957 * 0.05758
+# logger 10959 calibration: y=0.06052x R^2=1
+Mcap.light$logger_10959CAL <- Mcap.light$logger_10959 * 0.06052
+
+Mcap.light.2<- subset(Mcap.light, select = c( 1, 18:28)) #keep cols you need
+
+logger.df<-read.csv("data/metadata/UROP_logger_locations.csv") #read in logger tank locations
+
+Mcap.light.2.melt<- #melt the df and then add metadata
+  Mcap.light.2%>% 
+   pivot_longer(
+    cols=!datetime,
+    names_to="Light.logger",
+    values_to = "Light")
+
+#merge with metadata
+Mcap.light.2.melt.meta<-inner_join(Mcap.light.2.melt, logger.df, by="Light.logger")
+Mcap.light.2.melt.meta$Light.logger<-as.factor(Mcap.light.2.melt.meta$Light.logger)
+Mcap.light.2.melt.meta$Shade<-as.factor(Mcap.light.2.melt.meta$Shade)
+Mcap.light.2.melt.meta$Temp.logger<-as.factor(Mcap.light.2.melt.meta$Temp.logger)
+Mcap.light.2.melt.meta$Tank<-as.factor(Mcap.light.2.melt.meta$Tank)
+
+light_plot<-ggplot(data=Mcap.light.2.melt.meta, aes(x=datetime, y=Light, group = Shade, color=Shade)) +
+  geom_line(aes(color=Shade), linetype=2, show.legend = T)+
+  xlab("") + 
+  theme_bw() + 
+  theme(axis.line = element_line(color = 'black'), 
+        axis.title=element_text(size=14,face="bold"), 
+        panel.border = element_blank(),
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(), 
+        text = element_text(size=18),  
+        plot.background =element_blank(), 
+        legend.key = element_blank()) + 
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(),
+        panel.background = element_rect(colour = "black", size=1))+
+  theme(aspect.ratio=1)+
+  ylab(expression(paste("Light"))) +
+  ggtitle("UROP light")+
+  theme(plot.title = element_text(size=20, face = "italic"));light_plot 
+
+light_plot+facet_wrap(~Shade, scales = "free_y")
+light_plot + xlim(as_datetime("2017-10-23"),  as_datetime("2017-10-29"))
+
+light_plot<-ggplot(data=Mcap.light.2.melt.meta, aes(x=datetime, y=Light, color=Light.logger)) +
+  geom_line(aes(color=Light.logger), linetype=2, show.legend = T)+
+  xlab("") + 
+  theme_bw() + 
+  theme(axis.line = element_line(color = 'black'), 
+        axis.title=element_text(size=14,face="bold"), 
+        panel.border = element_blank(), 
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(), 
+        text = element_text(size=18),  
+        plot.background =element_blank(), 
+        legend.key = element_blank()) + 
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(),
+        panel.background = element_rect(colour = "black", size=1))+
+  theme(aspect.ratio=1)+
+  ylab(expression(paste("Light"))) +
+  ggtitle("UROP light")+
+  theme(plot.title = element_text(size=20, face = "italic"));light_plot 
+
+light_plot+facet_wrap(~Shade)
+light_plot + xlim(as_datetime("2017-10-23"),  as_datetime("2017-10-29"))
+
+light_plot<-ggplot(data=Mcap.light.2.melt.meta, aes(x=datetime, y=Light, group = Shade, color=Shade)) +
+  geom_smooth(aes(color=Shade), linetype=2, show.legend = T)+
+  xlab("") + 
+  theme_bw() + 
+  theme(axis.line = element_line(color = 'black'), 
+        axis.title=element_text(size=14,face="bold"), 
+        panel.border = element_blank(), 
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(), 
+        text = element_text(size=18),  
+        plot.background =element_blank(), 
+        legend.key = element_blank()) + 
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(),
+        panel.background = element_rect(colour = "black", size=1))+
+  theme(aspect.ratio=1)+
+  ylab(expression(paste("Light"))) +
+  ggtitle("Light")+
+  theme(plot.title = element_text(size=20, face = "italic"));light_plot
+
+#daily max range and average Mcap.light.2.melt.meta
+
+# Calculate average daily light integral for each shade treatment
+
+# number of loggers
+Mcap.light.2.melt.meta %>%
+  distinct(Light.logger, Shade) %>%
+  arrange(Shade)
+# 11 loggers
+
+light_res <- Mcap.light.2.melt.meta %>%
+  group_by(Light.logger, date = date(datetime), Shade) %>%     # group by light logger and day
+  summarise(dli = sum(Light, na.rm = T) / n() * 0.0864) %>%    # calc DLI for each logger on each day
+  group_by(Shade) %>%                                          # group by shade treatment
+  summarise(avg_dli = mean(dli))                               # calculate average
+  
+light_res %>%
+  arrange(Shade)
+
+light_res_bytimepoint <- Mcap.light.2.melt.meta %>%
+  group_by(Light.logger, date = date(datetime), Shade) %>%     # group by light logger and day
+  summarise(dli = sum(Light, na.rm = T) / n() * 0.0864) %>%    # calc DLI for each logger on each day
+  group_by(Shade, timepoint = date < "2017-11-29") %>%         # group by shade treatment and timepoint (11-29cutoff)
+  summarise(avg_dli = mean(dli)) %>%                           # calculate average
+  mutate(timepoint = case_when(timepoint == TRUE ~ "T1",
+                               timepoint == FALSE ~ "T2"))
+
+# Write to file
+#write_csv(light_res_bytimepoint, path = "data/processed/dli.csv")
+
+#### calculate average daily maxima
+avg_daily_maxima <- Mcap.light.2.melt.meta %>%
+  group_by(Light.logger, date = date(datetime), Shade) %>%     # group by light logger and day
+  summarise(max = max(Light)) %>%    # calc max for each logger on each day
+  group_by(Shade) %>%         # group by shade treatment and timepoint (11-29cutoff)
+  summarise(avg_max = mean(max, na.rm = T))                       # calculate averagde)
+
+#avg daily light max for only canopy shade is 314
+
+
+```
 
 ```
 
