@@ -113,6 +113,7 @@ Mcap.light.2.melt.meta$Shade<-as.factor(Mcap.light.2.melt.meta$Shade)
 Mcap.light.2.melt.meta$Temp.logger<-as.factor(Mcap.light.2.melt.meta$Temp.logger)
 Mcap.light.2.melt.meta$Tank<-as.factor(Mcap.light.2.melt.meta$Tank)
 
+#plots
 light_plot<-ggplot(data=Mcap.light.2.melt.meta, aes(x=datetime, y=Light, group = Shade, color=Shade)) +
   geom_line(aes(color=Shade), linetype=2, show.legend = T)+
   xlab("") + 
@@ -183,8 +184,6 @@ Mcap.light.2.melt.meta <- Mcap.light.2.melt.meta %>%
   mutate(time.point = case_when(date(datetime) < "2017-11-29" ~ "T1",
                                 date(datetime) >="2017-11-29" ~ "T2"))
 ```
-
-
 
 #Calc DLI, models, and plot DLI
 ```{r}
@@ -600,8 +599,7 @@ NOAA.df2<-NOAA.df %>%
 
 ```
 
-# Light during acclimation only
-
+# Light during acclimation only - 6 days prior, only use highest treatment (others held in treatment tanks)
 ```{r}
 #load data
 csv_files <- dir_ls("data/light_logger_files",glob="*.CSV",recurse = TRUE)
