@@ -133,6 +133,7 @@ ggsave(fig1, filename = "output/figure1.pdf", width = 84, height = 84, units= "m
 
 ```
 
+
 #Test top 2 light levels only (for reviewer) ####
 ```{r}
 df.mort.T2test<-subset(df.mort.T2, light.level=="Natural" | light.level=="Low Shade")
@@ -337,18 +338,19 @@ t2tempplot <- tempplot %+% filter(tempdat, time.point == "T2") +
 # Make figure with insets
 fig2 <- ggdraw(grplot) +
   draw_plot(t1tempplot, 0.19, 0.6, 0.32, 0.3) +
-  draw_plot(t2tempplot, 0.83, 0.6, 0.3, 0.3, hjust = 1); fig2
+  draw_plot(t2tempplot, 0.83, 0.6, 0.3, 0.3, hjust = .94); fig2
+
+ggsave(fig2, filename = "output/figure2.svg", width = 174, height = 90, units = "mm")
 
 
-#ggsave(fig2, filename = "output/figure2.png", width = 174, height = 90, units = "mm")
 
-#add astrix
-ann_text <- data.frame(dli = 1.4,growth.rate = 4.5,lab = "text",
-                       time.point = factor("T2",levels = c("T1","T2")))
-ann_text
-fig2+ geom_text(data = ann_text,label = "text")
-
-fig2+  annotate(geom = "text", x = 3, y = 2, label = "TEST", adj = 0.5, size = 5, fontface = "italic") 
+# #add astrix - still not working
+# ann_text <- data.frame(dli = 1.4,growth.rate = 4.5,lab = "*",
+#                        time.point = factor("T2",levels = c("T1","T2")))
+# ann_text
+# fig2+ geom_text(data = ann_text,label = "text")
+# 
+# fig2+  annotate(geom = "text", x = 3, y = 2, label = "TEST", adj = 0.5, size = 5, fontface = "italic") 
 
 
 #ggsave(fig2, filename = "output/figure2.pdf", width = 174, height = 90, units = "mm")

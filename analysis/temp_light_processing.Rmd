@@ -200,9 +200,14 @@ daily_dli <- Mcap.light.2.melt.meta %>%
   group_by(Light.logger, date = date(datetime), Shade) %>%     # group by light logger and day
   summarise(dli = sum(Light, na.rm = T) / n() * 0.0864) 
 
+#remove DLI for Jan 7 (only midnight values, DLI all 0)
+daily_dli<- daily_dli%>%
+     filter(!(date == '2018-01-07'))
+
 ggplot(daily_dli, aes(x = date, y = dli)) +
   geom_line() +
-  facet_wrap(~Light.logger)
+  facet_wrap(~Shade)
+
 
 # Calculate overall average DLI for each treatment
 light_res <- Mcap.light.2.melt.meta %>%
@@ -696,74 +701,6 @@ Mcap.light.2.melt.meta$Shade<-as.factor(Mcap.light.2.melt.meta$Shade)
 Mcap.light.2.melt.meta$Temp.logger<-as.factor(Mcap.light.2.melt.meta$Temp.logger)
 Mcap.light.2.melt.meta$Tank<-as.factor(Mcap.light.2.melt.meta$Tank)
 
-light_plot<-ggplot(data=Mcap.light.2.melt.meta, aes(x=datetime, y=Light, group = Shade, color=Shade)) +
-  geom_line(aes(color=Shade), linetype=2, show.legend = T)+
-  xlab("") + 
-  theme_bw() + 
-  theme(axis.line = element_line(color = 'black'), 
-        axis.title=element_text(size=14,face="bold"), 
-        panel.border = element_blank(),
-        panel.grid.major = element_blank(), 
-        panel.grid.minor = element_blank(), 
-        text = element_text(size=18),  
-        plot.background =element_blank(), 
-        legend.key = element_blank()) + 
-  theme(panel.grid.major = element_blank(), 
-        panel.grid.minor = element_blank(),
-        panel.background = element_rect(colour = "black", size=1))+
-  theme(aspect.ratio=1)+
-  ylab(expression(paste("Light"))) +
-  ggtitle("UROP light")+
-  theme(plot.title = element_text(size=20, face = "italic"));light_plot 
-
-light_plot+facet_wrap(~Shade)
-light_plot + xlim(as_datetime("2017-10-23"),  as_datetime("2017-10-29"))
-
-light_plot<-ggplot(data=Mcap.light.2.melt.meta, aes(x=datetime, y=Light, color=Light.logger)) +
-  geom_line(aes(color=Light.logger), linetype=2, show.legend = T)+
-  xlab("") + 
-  theme_bw() + 
-  theme(axis.line = element_line(color = 'black'), 
-        axis.title=element_text(size=14,face="bold"), 
-        panel.border = element_blank(), 
-        panel.grid.major = element_blank(), 
-        panel.grid.minor = element_blank(), 
-        text = element_text(size=18),  
-        plot.background =element_blank(), 
-        legend.key = element_blank()) + 
-  theme(panel.grid.major = element_blank(), 
-        panel.grid.minor = element_blank(),
-        panel.background = element_rect(colour = "black", size=1))+
-  theme(aspect.ratio=1)+
-  ylab(expression(paste("Light"))) +
-  ggtitle("UROP light")+
-  theme(plot.title = element_text(size=20, face = "italic"));light_plot 
-
-light_plot+facet_wrap(~Shade)
-light_plot + xlim(as_datetime("2017-10-23"),  as_datetime("2017-10-29"))
-
-light_plot<-ggplot(data=Mcap.light.2.melt.meta, aes(x=datetime, y=Light, group = Shade, color=Shade)) +
-  geom_smooth(aes(color=Shade), linetype=2, show.legend = T)+
-  xlab("") + 
-  theme_bw() + 
-  theme(axis.line = element_line(color = 'black'), 
-        axis.title=element_text(size=14,face="bold"), 
-        panel.border = element_blank(), 
-        panel.grid.major = element_blank(), 
-        panel.grid.minor = element_blank(), 
-        text = element_text(size=18),  
-        plot.background =element_blank(), 
-        legend.key = element_blank()) + 
-  theme(panel.grid.major = element_blank(), 
-        panel.grid.minor = element_blank(),
-        panel.background = element_rect(colour = "black", size=1))+
-  theme(aspect.ratio=1)+
-  ylab(expression(paste("Light"))) +
-  ggtitle("Light")+
-  theme(plot.title = element_text(size=20, face = "italic"));light_plot
-
-#daily max range and average Mcap.light.2.melt.meta
-
 # Calculate average daily light integral for each shade treatment
 
 # number of loggers
@@ -772,43 +709,35 @@ Mcap.light.2.melt.meta %>%
   arrange(Shade)
 # 11 loggers
 
-light_res <- Mcap.light.2.melt.meta %>%
+# Plot DLI over time
+daily_dli <- Mcap.light.2.melt.meta %>%
   group_by(Light.logger, date = date(datetime), Shade) %>%     # group by light logger and day
-  summarise(dli = sum(Light, na.rm = T) / n() * 0.0864) %>%    # calc DLI for each logger on each day
-  group_by(Shade) %>%                                          # group by shade treatment
-  summarise(avg_dli = mean(dli))                               # calculate average
-  
-light_res %>%
-  arrange(Shade)
+  summarise(dli = sum(Light, na.rm = T) / n() * 0.0864) 
 
-#mean dli by group
-light_res_bytimepoint <- Mcap.light.2.melt.meta %>%
-  group_by(Light.logger, date = date(datetime), Shade) %>%     # group by light logger and day
-  summarise(dli = sum(Light, na.rm = T) / n() * 0.0864) %>%    # calc DLI for each logger on each day
-  group_by(Shade, timepoint = date < "2017-11-29") %>%         # group by shade treatment and timepoint (11-29cutoff)
-  summarise(avg_dli = mean(dli)) %>%                           # calculate average
-  mutate(timepoint = case_when(timepoint == TRUE ~ "T1",
-                               timepoint == FALSE ~ "T2"))
-#max dli by group
-light_res_bytimepoint <- Mcap.light.2.melt.meta %>%
-  group_by(Light.logger, date = date(datetime), Shade) %>%     # group by light logger and day
-  summarise(dli = sum(Light, na.rm = T) / n() * 0.0864) %>%    # calc DLI for each logger on each day
-  group_by(Shade, timepoint = date < "2017-11-29") %>%         # group by shade treatment and timepoint (11-29cutoff)
-  summarise(max_dli = max(dli)) %>%                           # calculate average
-  mutate(timepoint = case_when(timepoint == TRUE ~ "T1",
-                               timepoint == FALSE ~ "T2"))
+#remove DLI for Jan 7 (only midnight values, DLI all 0)
+daily_dli<- daily_dli%>%
+     filter(!(date == '2017-10-29'))
+#only ambient for acclimation
+daily_dli.amb<-subset(daily_dli, Shade=="1_cloth")
 
-# Write to file
-#write_csv(light_res_bytimepoint, path = "data/processed/dli.csv")
+ggplot(daily_dli.amb, aes(x = date, y = dli)) +
+  geom_line() 
+
 
 #### calculate average daily maxima
-avg_daily_maxima <- Mcap.light.2.melt.meta %>%
-  group_by(Light.logger, date = date(datetime), Shade) %>%     # group by light logger and day
-  summarise(max = max(Light)) %>%    # calc max for each logger on each day
-  group_by(Shade) %>%         # group by shade treatment and timepoint (11-29cutoff)
+
+avg_daily_maxima <- daily_dli.amb %>%
+  group_by(date) %>%     # group by light logger and day
+  summarise(max = max(dli)) %>%    # calc max for each logger on each day
+  #group_by(Shade) %>%         # group by shade treatment and timepoint (11-29cutoff)
   summarise(avg_max = mean(max, na.rm = T))                       # calculate averagde)
 
-#avg daily light max for only canopy shade is 314
+#avg mean
+avg_daily_mean <- daily_dli.amb %>%
+  group_by(date) %>%     # group by light logger and day
+  summarise(mean = mean(dli)) %>%    # calc max for each logger on each day
+  #group_by(Shade) %>%         # group by shade treatment and timepoint (11-29cutoff)
+  summarise(avg_mean = mean(mean, na.rm = T))                       # calculate averagde)
 
 
 ```
