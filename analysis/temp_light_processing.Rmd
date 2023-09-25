@@ -13,7 +13,6 @@ library(fs)
 library(reshape2)
 library(emmeans)
 library(lmerTest)
-
 library(lubridate)# for date parsing
 library(tidyverse)
 ```
@@ -52,7 +51,7 @@ loggers_wide <- loggers_wide %>%
                         filter(datetime >= as.Date('2017-10-29') & datetime <= as.Date('2018-01-07')) #
   loggers_wide$date<-date(loggers_wide$datetime) #pull out date
 
-#cut out times when data was pulled from logger, #this removes some of it but not all and not sure why but oh well?
+#cut out times when data was pulled from logger
   loggers_wide<-loggers_wide%>%
      filter(!(date == '2017-11-01'))%>%
      filter(!(date == '2017-11-18'))%>%
@@ -65,11 +64,11 @@ loggers_wide <- loggers_wide %>%
 # save the wide version of the file to CSV
 #write_csv(loggers_wide,"loggers_wide_20220713.csv")
 
-#REMOVE LOGGER 6377 no cal file
+#REMOVE LOGGER 6377 no calibration file
 loggers_wide = subset(loggers_wide, select = -c(logger_6377) )
 Mcap.light<-loggers_wide #make a copy
 
-##############
+############## 
 #Logger Calibration
 
 # logger 2488 calibration: y=0.06069x R^2=0.999
@@ -208,7 +207,6 @@ ggplot(daily_dli, aes(x = date, y = dli)) +
   geom_line() +
   facet_wrap(~Shade)
 
-
 # Calculate overall average DLI for each treatment
 light_res <- Mcap.light.2.melt.meta %>%
   group_by(Light.logger, date = date(datetime), Shade) %>%     # group by light logger and day
@@ -239,7 +237,7 @@ avg_daily_maxima <- Mcap.light.2.melt.meta %>%
   mutate(timepoint = case_when(timepoint == TRUE ~ "T1",
                                timepoint == FALSE ~ "T2"))
 
-# SHow that avg daily maxima and DLI are proportional
+# Show that avg daily maxima and DLI are proportional
 avg_daily_maxima %>%
   arrange(timepoint, avg_max) %>%
   full_join(light_res_bytimepoint) %>%
@@ -274,10 +272,6 @@ contrast(emm, method = "pairwise", by = "Shade")
 # emm <- emmeans(mod, ~ Shade*time.point)
 # contrast(emm, method = "pairwise", by = "time.point")
 # contrast(emm, method = "pairwise", by = "Shade")
-
-
-
-
 ```
 
 #Temperature Loggers
@@ -346,7 +340,7 @@ Mcap.temp.meta.melt <- melt(Mcap.temp, id = c("datetime"))
 names(Mcap.temp.meta.melt)[2]<-"logger"
 names(Mcap.temp.meta.melt)[3]<-"temp"
 
-write_csv(Mcap.temp.meta.melt, path = "data/processed/temperature.csv")
+#write_csv(Mcap.temp.meta.melt, path = "data/processed/temperature.csv")
 
 temp_plot<-ggplot(data=Mcap.temp.meta.melt, aes(x=datetime, y=temp, color=logger)) +
   geom_line(aes(color=logger), linetype=2, show.legend = F)+
@@ -378,8 +372,7 @@ Mcap.temp.meta.melt$logger<-as.character(Mcap.temp.meta.melt$logger)
     endsWith(logger, "logger_Tank16") ~ "Tank 16",
     ))
  
- 
-#SI Fig 1
+#SI Fig 2
 temp_plot<-ggplot(data=Mcap.temp.meta.melt, aes(x=datetime, y=temp, color=Tank)) +
   geom_smooth(aes(color=Tank), linetype=1, show.legend = T)+
   xlab("") + 
@@ -407,10 +400,7 @@ theme_bw() +
   theme(legend.key=element_rect(colour=NA, fill=NA))+
     theme(legend.position = c(0.75, 0.75));temp_plot 
 
-  ggsave(temp_plot, filename = "output/figure_S1.png", width = 100, height = 100, units= "mm")
-
-
-
+  #ggsave(temp_plot, filename = "output/figure_S1.png", width = 100, height = 100, units= "mm")
 
 #Mean temp across tanks
 temp_plot<-ggplot(data=Mcap.temp.meta.melt, aes(x=datetime, y=temp)) +
@@ -431,8 +421,6 @@ temp_plot<-ggplot(data=Mcap.temp.meta.melt, aes(x=datetime, y=temp)) +
   ylab(expression(paste('Temperature ('*~degree*C*')'))) +
   xlab("")+
   theme(plot.title = element_text(size=20, face = "italic"));temp_plot 
-
-
 
 #summary stats
 
@@ -457,7 +445,6 @@ Mcap.temp.T2 %>%
   summarise(mediantemp = median(temp, na.rm=T), sd=sd(temp, na.rm=T)) 
 Mcap.temp.T2 %>%
   summarise(rangetemp = range(temp, na.rm=T), sd=sd(temp, na.rm=T)) 
-
 ```
 
 #NOAA BUOY DATA Station MOKH1
@@ -604,17 +591,13 @@ colnames(NOAA.df)[1] = "Temp"
 NOAA.df$month<-as.factor(NOAA.df$month)
 NOAA.df$Temp<-as.numeric(NOAA.df$Temp)
 
-
 #average per month
 NOAA.df2<-NOAA.df %>%
   group_by(month) %>%
   dplyr::summarise(avg_temp = mean(Temp, na.rm = TRUE), .groups = "drop")
-
-
-
 ```
 
-# Light during acclimation only - 6 days prior, only use highest treatment (others held in treatment tanks)
+# Light during acclimation only - 6 days prior, only use highest treatment (other loggers held in treatment tanks with no corals)
 ```{r}
 #load data
 csv_files <- dir_ls("data/light_logger_files",glob="*.CSV",recurse = TRUE)
@@ -648,10 +631,6 @@ loggers_wide <- loggers %>%
 loggers_wide <- loggers_wide %>%
                         filter(datetime >= as.Date('2017-10-23') & datetime <= as.Date('2017-10-29')) #
   loggers_wide$date<-date(loggers_wide$datetime) #pull out date
-
-#cut out times when data was pulled from logger, 
-  # loggers_wide<-loggers_wide%>%
-  #    filter(!(date == '2017-11-01'))%>%
 
 #REMOVE LOGGER 6377 no cal file
 loggers_wide = subset(loggers_wide, select = -c(logger_6377) )
@@ -723,7 +702,6 @@ daily_dli.amb<-subset(daily_dli, Shade=="1_cloth")
 ggplot(daily_dli.amb, aes(x = date, y = dli)) +
   geom_line() 
 
-
 #### calculate average daily maxima
 
 avg_daily_maxima <- daily_dli.amb %>%
@@ -738,9 +716,7 @@ avg_daily_mean <- daily_dli.amb %>%
   summarise(mean = mean(dli)) %>%    # calc max for each logger on each day
   #group_by(Shade) %>%         # group by shade treatment and timepoint (11-29cutoff)
   summarise(avg_mean = mean(mean, na.rm = T))                       # calculate averagde)
-
-
 ```
 
-```
+
 
