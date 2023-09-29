@@ -203,6 +203,7 @@ daily_dli <- Mcap.light.2.melt.meta %>%
 daily_dli<- daily_dli%>%
      filter(!(date == '2018-01-07'))
 
+# Figure S1 ####
 ggplot(daily_dli, aes(x = date, y = dli)) +
   geom_line() +
   facet_wrap(~Shade)
@@ -237,7 +238,7 @@ avg_daily_maxima <- Mcap.light.2.melt.meta %>%
   mutate(timepoint = case_when(timepoint == TRUE ~ "T1",
                                timepoint == FALSE ~ "T2"))
 
-# Show that avg daily maxima and DLI are proportional
+# Figure S2:avg daily maxima and DLI are proportional ####
 avg_daily_maxima %>%
   arrange(timepoint, avg_max) %>%
   full_join(light_res_bytimepoint) %>%
@@ -372,7 +373,7 @@ Mcap.temp.meta.melt$logger<-as.character(Mcap.temp.meta.melt$logger)
     endsWith(logger, "logger_Tank16") ~ "Tank 16",
     ))
  
-#SI Fig 2
+# Figure S2 ####
 temp_plot<-ggplot(data=Mcap.temp.meta.melt, aes(x=datetime, y=temp, color=Tank)) +
   geom_smooth(aes(color=Tank), linetype=1, show.legend = T)+
   xlab("") + 

@@ -82,9 +82,6 @@ df.mort %>%
   summarise(mean = median(mortality, na.rm = T),
             iqr = paste0(quantile(mortality, probs = c(0.25, 0.75), na.rm = T), collapse = "-"))
 
-
-
-
 # arcsinsqrt transform and get T2 only
 df.mort.T2 <- filter(df.mort, time.point == "T2") %>% mutate(asin = asin(sqrt(mortality/100)))
 
@@ -98,7 +95,7 @@ df.mort.T2 %>%  #n of corals in mortality dataset by treatment
   group_by(dli, dom) %>%
   count(dli, dom)
 
-# Fit lmer
+# Table 2: Fit lmer ####
 mod2 <- lmer(asin ~ dli * dom + (1|tank) + (1|genotype), data = df.mort.T2)
 summary(mod2)  # interaction is sig. with lmer on asinsqrt transformed data
 hist(residuals(mod2))
@@ -111,8 +108,6 @@ rbind(contrast(emm2, method = "pairwise", by = c("dli")), adjust = "fdr")
 emm2 <- emmeans(mod2, ~ dom)
 rbind(contrast(emm2, method = "pairwise"), adjust = "fdr")
 
-
-# Plot figure 1  ####
 # reorder factors
 df.mort.T2$light.level <- factor(df.mort.T2$light.level, levels = c("High Shade", "Medium Shade", "Low Shade","Natural"))
 df.mort.T2<-df.mort.T2[!is.na(df.mort.T2$mortality),]#remove NAs
@@ -121,7 +116,7 @@ df.mort.T2 <- df.mort.T2 %>%
   mutate(mortcat = case_when(mortality == 0 ~ "0",
                              mortality > 0 & mortality < 50 ~ "1-50",
                              mortality >= 50 ~ "50+"))
-
+# Figure 1  ####
 fig1<-ggplot(df.mort.T2, aes(x = light.level, fill = mortcat)) +
   scale_fill_manual(values=c('#2A788EFF','#22A884FF', '#7AD151FF'))+
   facet_wrap(~dom) + 
@@ -129,70 +124,8 @@ fig1<-ggplot(df.mort.T2, aes(x = light.level, fill = mortcat)) +
   panel.background = element_blank(), axis.line = element_line(colour = "black"))+
   geom_bar(position = "fill");fig1
 
-ggsave(fig1, filename = "output/figure1.pdf", width = 84, height = 84, units= "mm")
-
+#ggsave(fig1, filename = "output/figure1.pdf", width = 84, height = 84, units= "mm")
 ```
-
-
-#Test top 2 light levels only (for reviewer) ####
-```{r}
-df.mort.T2test<-subset(df.mort.T2, light.level=="Natural" | light.level=="Low Shade")
-mod2 <- lmer(asin ~ dli * dom + (1|tank) + (1|genotype), data = df.mort.T2test)
-summary(mod2)  # interaction is significant, domD is significant
-hist(residuals(mod2)) #residuals not normal
-
-# Get model outputs for lmer
-emm2 <- emmeans(mod2, ~ dom*dli, at = list(dli = sort(unique(df.mort.T2test$dli))))
-rbind(contrast(emm2, method = "pairwise", by = c("dli")), adjust = "fdr") # C-D sig diff only low light
-```
-# sumbission 1 mortality  - Delete before resubmission
-```{r}
-
-# Fit glm - quasibinomial
-mod <- glm(mortality/100 ~ dli * dom, family = "quasibinomial", data = df.mort.T2)
-car::Anova(mod)
-hist(residuals(mod))
-# Get model outputs for quasibinomial
-emm <- emmeans(mod, ~ dom*dli, at = list(dli = sort(unique(df.mort.T2$dli))))
-summary(emm, type = "response")
-
-# pairwise comparisons
-rbind(contrast(emm, method = "pairwise", by = c("dli")), adjust = "fdr")
-
-# get fits and plot
-res <- expand_grid(dom = c("C", "D"), dli = seq(0,4,0.1))
-res$pred <- predict(mod2, res, type = "response", re.form = NA)
-
-
-#fig 1 old ####
-set.seed(36)
-
-fig1 <- ggplot(data = df.mort.T2,
-       aes(x = dli, y = mortality, color = dom, group = dom)) +
-  geom_jitter(aes(shape=dom , color=dom),alpha=.5) +
-  scale_shape_manual(values=c(1,2))+
-  geom_line(data = res, aes(y = pred * 100),show.legend=F)+
-  scale_color_manual(values=c("deepskyblue3", "chocolate3"), name = NULL) +
-  labs(y = "Percent Tissue Loss", x = "Daily light integral (mol m-2 d-1)")+
-  theme_custom() +
-  theme(legend.position = "none")+
-   xlab(expression(Daily~light~integral~(mol~m^-2~d^-1)))+
-  ylab(Percent~tissue~loss);fig1
-
-ggsave(fig1, filename = "output/figure1.tiff", width = 84, height = 84, units= "mm")
-
-####original fig - mess now
-fig1 <- ggplot(data = df.mort.T2,
-       aes(x = dli, y = mortality, color = dom, group = dom)) +
-  geom_jitter(alpha = 0.5) +
-  geom_violin(aes(group = dom:dli)) +
-  geom_line(data = res, aes(y = pred * 100))+
-  scale_color_manual(values=c("deepskyblue3", "chocolate3"), name = NULL) +
-  labs(y = "Percent Tissue Loss", x = "Daily light integral (mol m-2 d-1)")+
-  theme_custom() +
-  theme(legend.position = c(0.9, 0.9))
-```
-
 # Growth
 ```{r}
 # Plot buoyant weight data for each frag
@@ -250,16 +183,14 @@ grres.f %>%
   group_by(light.level, time.point, dom) %>%
   summarise(meangr = mean(growth.rate))
 
-
-# Run stats
+# # Table 3 ####
+#Run stats
 mod <- lmer(growth.rate ~ dom * dli * time.point + (1|genotype/frag.id) + (1|tank), data = grres.f)
 anova(mod)
 aug<-augment(mod)
 ggplot(aug, aes(x=factor(dli), y=.cooksd))+
   geom_boxplot()+
   facet_grid(~time.point)
-
-
 
 # Get model outputs
 emm <- emmeans(mod, ~ dom*dli|time.point, at = list(dli = sort(unique(gr$dli))))
@@ -269,28 +200,6 @@ rbind(contrast(emm, method = "pairwise", by = c("dli", "time.point"))[c(2,4,6,8,
 emm <- emmeans(mod, ~ dom|time.point, at = list(dli = sort(unique(gr$dli))))
 rbind(contrast(emm, method = "pairwise", by = c( "time.point")), adjust = "fdr")
 
-
-#### ROSS ####
-#how to do pairwise comparing DLIs within a symbiont group AT each time point...
-
-# emm <- emmeans(mod, ~ dom*dli|time.point, at = list(dli = sort(unique(gr$dli))))
-# options(max.print = 10000)  
-# rbind(contrast(emm, method = "pairwise", by = c( "time.point")), adjust = "fdr")
-# 
-# #################This seems impossible - ALL are <.0001.... 
-# rbind(contrast(emm, method = "pairwise", by = c( "time.point"))[c(33,37,41,46,50,54,79,83,88,92,109,114,124,128,132,139,143,147,178,182,189,193,216,223)], adjust = "fdr")
-
-
-
-
-
-
-
-
-
-
-
-
 # Get fitted values to plot
 pred <- tidyr::expand(grres.f, dom, time.point, dli = seq(0.331, 4.13, len = 101))
 pred$fit <- predict(mod, pred, re.form = NA)
@@ -298,8 +207,7 @@ bootfit <- bootMer(mod, nsim = 999, FUN = function(x) predict(x, pred, re.form =
 pred$lci <- apply(bootfit$t, 2, quantile, 0.05)
 pred$uci <- apply(bootfit$t, 2, quantile, 0.95)
 
-# Plot
-
+# Figure 2 ####
 grplot <- ggplot(grres.f, aes(x = dli, y = growth.rate, color = dom, fill = dom)) +
   facet_wrap(~time.point) +
   geom_violin(aes(group = interaction(dom, dli)), scale = "width", width = 0.3, alpha = 0.5) +
@@ -311,7 +219,6 @@ grplot <- ggplot(grres.f, aes(x = dli, y = growth.rate, color = dom, fill = dom)
   theme(legend.position = c(0.05, 0.85)) +
   xlab(expression(Daily~light~integral~(mol~m^-2~d^-1)))+
   ylab(expression(Growth~rate~(mg~g^-1~d^-1)));grplot
-
 
 # Make temperature plot
 tempdat <- read_csv("data/processed/temperature.csv") %>%
@@ -340,21 +247,7 @@ fig2 <- ggdraw(grplot) +
   draw_plot(t1tempplot, 0.19, 0.6, 0.32, 0.3) +
   draw_plot(t2tempplot, 0.83, 0.6, 0.3, 0.3, hjust = .94); fig2
 
-ggsave(fig2, filename = "output/figure2.svg", width = 174, height = 90, units = "mm")
-
-
-
-# #add astrix - still not working
-# ann_text <- data.frame(dli = 1.4,growth.rate = 4.5,lab = "*",
-#                        time.point = factor("T2",levels = c("T1","T2")))
-# ann_text
-# fig2+ geom_text(data = ann_text,label = "text")
-# 
-# fig2+  annotate(geom = "text", x = 3, y = 2, label = "TEST", adj = 0.5, size = 5, fontface = "italic") 
-
-
-#ggsave(fig2, filename = "output/figure2.pdf", width = 174, height = 90, units = "mm")
-
+#ggsave(fig2, filename = "output/figure2.svg", width = 174, height = 90, units = "mm")
 ```
 
 #qPCR distribution
@@ -369,6 +262,7 @@ qPCR.df<-na.omit(qPCR.df)
 p <- ggplot(qPCR.df, aes(x=dom, y=propD)) + 
   geom_boxplot();p
 
+# Figure S4 ####
 p1<- ggviolin(qPCR.df, x = "dom", y = "propD",
    add = "boxplot", fill = "dom");p1
 
@@ -387,78 +281,4 @@ Ddom$percentC<-1-Ddom$x
 
 summarise(Cdom, median = median(x))
 summarise(Ddom, median = median(percentC))
-
-
-```
-
-
-
-
-
-
-#growth Revisions.1 Just for reviewer (keep?) THIS AND NEXT SHOWS THAT STORY CHANGES IF WE REMOVE DATA...
-Just Natural and Low Shade --> THIS does not have a significant 3-way. 
-```{r}
-grres.f.TOP2Shade<-grres.f
-grres.f.TOP2Shade<-subset(grres.f.TOP2Shade, light.level=="Natural"|light.level=="Low Shade")
-
-# Run stats
-mod <- lmer(growth.rate ~ dom * dli * time.point + (1|genotype/frag.id) + (1|tank), data = grres.f.TOP2Shade)
-anova(mod) #3-way interaction NOT significant now...
-hist(residuals(mod)) #great...
-
-# Get model outputs
-emm <- emmeans(mod, ~ dom*dli|time.point, at = list(dli = sort(unique(gr$dli))))
-# pairwise comparisons -- only the dli:timepoint combos that actually appear in the data
-rbind(contrast(emm, method = "pairwise", by = c("dli", "time.point"))[c(2,4,6,8,9,11,13,15)], adjust = "fdr")
-
-# Get fitted values to plot
-pred <- tidyr::expand(grres.f.TOP2Shade, dom, time.point, dli = seq(0.331, 4.13, len = 101))
-pred$fit <- predict(mod, pred, re.form = NA)
-bootfit <- bootMer(mod, nsim = 999, FUN = function(x) predict(x, pred, re.form = NA))
-pred$lci <- apply(bootfit$t, 2, quantile, 0.05)
-pred$uci <- apply(bootfit$t, 2, quantile, 0.95)
-
-# Plot
-
-grplot <- ggplot(grres.f.TOP2Shade, aes(x = dli, y = growth.rate, color = dom, fill = dom)) +
-  facet_wrap(~time.point) +
-  geom_violin(aes(group = interaction(dom, dli)), scale = "width", width = 0.3, alpha = 0.5) +
-  geom_line(data = pred, aes(y = fit)) +
-  geom_ribbon(data = pred, aes(y = fit, ymin = lci, ymax = uci), alpha = 0.2, lwd = 0) +
-  scale_color_manual(values=c("deepskyblue3", "chocolate3"), name = NULL) +
-  scale_fill_manual(values=c("deepskyblue3", "chocolate3"), name = NULL) +
-  theme_custom() +
-  theme(legend.position = c(0.05, 0.85)) +
-  xlab(expression(Daily~light~integral~(mol~m^-2~d^-1)))+
-  ylab(expression(Growth~rate~(mg~g^-1~d^-1)));grplot
-
-# Make temperature plot
-tempdat <- read_csv("data/processed/temperature.csv") %>%
-  mutate(time.point = if_else(datetime < "2017-11-29", "T1", "T2"))
-medtemp <- tempdat %>% group_by(time.point) %>% summarise(med = median(temp, na.rm = T))
-tempplot <- ggplot(data=tempdat, aes(x=datetime, y=temp)) +
-  geom_smooth(color = "black", show.legend = F, method = "gam", formula = y ~ s(x, bs = "bs")) +
-  coord_cartesian(ylim = c(23, 27.2)) +
-  theme_custom() +
-  labs(x = "", y = "Temp. (°C)");tempplot
-
-t1tempplot <- tempplot %+% filter(tempdat, time.point == "T1") +
-  geom_hline(data = filter(medtemp, time.point == "T1"), aes(yintercept = med), linetype = 2) +
-  scale_x_datetime(breaks = as_datetime(c("2017-10-29", "2017-11-29")), date_labels = "%e-%b") +
-  theme(axis.text.x = element_text(hjust = c(0, 1)),
-        axis.title.y = element_text(size = 7))
-t2tempplot <- tempplot %+% filter(tempdat, time.point == "T2") +
-  geom_hline(data = filter(medtemp, time.point == "T2"), aes(yintercept = med), linetype = 2) +
-  scale_x_datetime(breaks = as_datetime(c("2017-11-29", "2018-01-07")), date_labels = "%e-%b") +
-  theme(axis.text.y = element_blank(), axis.title.y = element_blank(), axis.ticks.y = element_blank(),
-        axis.text.x = element_text(hjust = c(0, 1)),
-        plot.margin = margin(l = 0, r = 10, t = 5, b = 5))
-
-# Make figure with insets
-fig2 <- ggdraw(grplot) +
-  draw_plot(t1tempplot, 0.19, 0.6, 0.32, 0.3) +
-  draw_plot(t2tempplot, 0.83, 0.6, 0.3, 0.3, hjust = 1); fig2
-
-#ggsave(fig2, filename = "output/figure2.tiff", width = 174, height = 90, units = "mm")
 ```
