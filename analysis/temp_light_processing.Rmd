@@ -254,7 +254,7 @@ light_res.dli <- Mcap.light.2.melt.meta %>%
   group_by(Light.logger, date = date(datetime), time.point, Shade, Tank) %>%     # group by light logger and day
   summarise(dli = sum(Light, na.rm = T) / n() * 0.0864) # calc DLI for each logger on each day
                          
-#DLI model
+# Table S2 DLI model ####
 mod <- lme4::lmer(dli ~ Shade*time.point + (1|Tank), 
             data = light_res.dli)
 anova(mod)

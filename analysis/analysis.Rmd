@@ -100,7 +100,7 @@ mod2 <- lmer(asin ~ dli * dom + (1|tank) + (1|genotype), data = df.mort.T2)
 summary(mod2)  # interaction is sig. with lmer on asinsqrt transformed data
 hist(residuals(mod2))
 
-# Get model outputs for lmer dom symbiont* dli
+# Table S4:  model outputs for lmer dom symbiont* dli ####
 emm2 <- emmeans(mod2, ~ dom*dli, at = list(dli = sort(unique(df.mort.T2$dli))))
 rbind(contrast(emm2, method = "pairwise", by = c("dli")), adjust = "fdr")
 
@@ -192,7 +192,7 @@ ggplot(aug, aes(x=factor(dli), y=.cooksd))+
   geom_boxplot()+
   facet_grid(~time.point)
 
-# Get model outputs
+# Table S6: Get model outputs ####
 emm <- emmeans(mod, ~ dom*dli|time.point, at = list(dli = sort(unique(gr$dli))))
 # pairwise comparisons -- only the dli:timepoint combos that actually appear in the data
 rbind(contrast(emm, method = "pairwise", by = c("dli", "time.point"))[c(2,4,6,8,9,11,13,15)], adjust = "fdr")
