@@ -35,18 +35,6 @@ theme_custom <- function() {
     )
 }
 ```
-one of these packages needed for qqplot figure out which and then delete
-```{r}
-# library(car)
-# library(gridExtra)
-# library(multcomp)
-# library(reshape)
-# library(factoextra)
-# library(reshape2)
-# library(vegan)
-# library(pairwiseAdonis)
-# library("scales")
-```
 
 # Load in data
 ```{r}

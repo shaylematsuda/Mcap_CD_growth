@@ -455,7 +455,7 @@ library(clock)
 library(tidyverse)
 library(lubridate)
 
-mok<-read.csv("MOK1_data.csv")
+mok<-read.csv("data/MOK1_data.csv")
 as_tibble(mok)
 
 mok2 <- mok %>%
