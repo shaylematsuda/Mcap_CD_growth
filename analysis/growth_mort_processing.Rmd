@@ -64,7 +64,7 @@ BW.data<-merge(BW.data, metadata, by.x= "frag.id") #merge with metadata
   BW.data$temp.c<-as.numeric(BW.data$temp.c)
   BW.data$time.point<-as.factor(as.character(BW.data$time.point))
 
-#HPutnam code
+#HPutnam original code source
 
 # load data 
 CalData<-read.csv('data/Buoyant_weight/Bouyant_weight_calibration_curve.csv', header=T, sep=",")
@@ -102,7 +102,6 @@ BWCalc_Mcap <- function(StandardAir= 39.092, Temp, BW, CoralDensity = 2.03){
   # CoralDensity <- 2.03 #g cm-3, set aragonite density for Montipora from literature 
   #Montipora Arag = 2.03 g cm-3 average from table 2 in Anthony 2003 Functional Ecology 17:246-259
   
-
  #Calculation------------------------------------------------------------
   #Step 1: correct the Standard weights for temperature
   # StandardFresh is the weight of the Standard in  fresh water at temp x
@@ -165,7 +164,6 @@ missing_qpcr <- anti_join(BW.data, qpcr) %>%
 df <- df %>%
   filter(!is.na(Dry.Weigh.g))
 
-
 # Fill in missing symbiont data
 # Sometimes missing symbiont data for frags where qPCR failed -- assign dominant symbiont based on other frags of same genotype.
 df %>%
@@ -174,57 +172,40 @@ df %>%
   dplyr::summarize(sym = paste0(unique(dom), collapse = ",")) %>%
   filter(nchar(sym) > 1)
 
-# Genotype 864 = frags 20, 21. -- each amped once as C and once as D
-# frag20 T2 had poor amplification (throw away) -- T0 showed D. 
-# frag21 T0 had "A" and "B" run with diff. dom syms... which is right? Use D bc frag20 had D?  or throw away?
-# 864 screening biopsy was 90% D
-# could switch this colony to all D....
+# Genotype 864 
+# 864 screening biopsy was 90% D. Genotype assigned D. 
 df %>%
   dplyr::filter(genotype == "864")  %>%
   arrange(frag.id, time.point) %>%
   print(n = nrow(.))
 
 # Genotype 867B = frags 47, 48, 49, 50.
-# 47=C@T2 ----healthy at T2
-# 48=D@T0 ----dead3 by T2
-# 49=C@T2 ----dead2 by T2
-# 50=D@T0 ----dead5 by T2
-# screening biopsy for '867' was D... but was this same colony as 867B?
-# If going with T0 data, could label this as a D colony, but weird that T2 samples were both C....shuffling?
-# Call this a D colony, but if outlier/weird, probly throw away...
-### this 867B at T2 high light had  the highest  growth rate of  all "D" colonies...since  this is an outlier, best to filter out this data point. it probably really was C, and was tagged as wrong genotype. 
+# screening biopsy for '867' was D.
 
 # Genotype 868 = frags 109, 110, 111, 112
-# all have pretty even mixtures but all C-dom except 112@T0 was D-dom.... but only 58% D. qPCR data looks good.
-# ...MIXED
-# label this a D for now... D could be defined as morethan background levels of D  / including these mixed colonies
-
-# Genotype 880 = frag 24 only. 90%D@T0, 53%C@T2.....
-# ...MIXED
+# all have pretty even mixtures but all C-dom except 112@T0 was D-dom (only 58% D). 
+# label this a D
 
 # Genotype 912 = frags 51, 52, 53, 64
 # 53 and 64 are 98% D.
-# 51 is 100%D@T0, and 100%C@T2.... qPCR data better for the C sample than the D sample...
-# no colony screening sample for this genotype
-# could label as D colony
+# label as D colony
 
 # Genotype 922 = frags 70, 84, 85, 86
 # 70 is 98%D@T0, 100%C@T2.
 # 85 is 96%D@T2
-# no colony screening sample
 
-# Going to label all these genotypes as D's for now
+# Label all these genotypes as D's 
 genos <- c("864", "867B", "868", "880", "912", "922")
 df <- df %>%
   mutate(dom = if_else(genotype %in% genos, "D", dom))
 
-# Are any genotypes entirely missing symbiont data?
+# Check if any genotypes entirely missing symbiont data
 df %>%
   group_by(genotype) %>%
   summarize(missingdom = !any(!is.na(dom))) %>%
   filter(missingdom)  
-# Yes, genotype 894 has only one fragment (265), and it has no qPCR data.
-# Parent colony screening biopsy for 894 was C, so going to label this as C (Mariah's notes also say frag 265 was setup as a brown C colony).
+
+# Parent colony screening biopsy for 894 was C
 df <- df %>%
   mutate(dom = if_else(genotype == "894", "C", dom))
 
@@ -233,7 +214,7 @@ df <- df %>%
   mutate(dom = replace_na(dom, unique(dom[!is.na(dom)]))) %>%
   ungroup()
 
-#SI2 Table Genotype x symbiont ID, qPCR
+#Table Genotype x symbiont ID, qPCR
 df1<-df #copy
 df1<-subset(df1, time.point=="T0")
 df2<-df1[,c( 6,10)]
@@ -241,10 +222,6 @@ df2<-na.omit(df2)
 df3<-df2 %>%
   group_by(genotype) %>%
   summarise_at(vars(propD), list(PropD = mean))
-
-#write.csv(df3, "df3.csv")
-
-
 ```
 
 # Partial tissue loss (Percent scores, in 5% intervals)
@@ -336,7 +313,6 @@ df  <- df %>%
   fill(genotype, light.level, big.tank, tank, dom) %>%
   ungroup()
 
-
 #### Filter frags if symb ID ambiguous
 
 # Filter out a few fragments where symbiont identity is ambiguous, e.g., 867B and 922 where the colony was categorized as D based on the majority of frags from that colony, but individual fragments were 100%C
@@ -349,6 +325,6 @@ df <- df %>%
 
 # Save cleaned dataset to file
 ```{r}
-write_csv(df, "data/processed/all_data_cleaned.csv")
+#write_csv(df, "data/processed/all_data_cleaned.csv")
 ```
 
