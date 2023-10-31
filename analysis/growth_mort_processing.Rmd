@@ -6,23 +6,22 @@ editor_options:
   chunk_output_type: console
 ---
 
-This is the data wrangling script for the Symbiont-light tradeoffs paper. 
+This is the data wrangling script for the "Symbiont-mediated tradeoffs between growth and heat tolerance are modulated by light and temperature in the coral Montipora capitata" manuscript.  
 Shayle Matsuda, Mariah Opalek, Raphael Ritson-Williams, Ruth Gates, Ross Cunning
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 options(digits = 5) # Modify global options - set sig figs to 5 digits
-
 ```
 
 # Metadata
 ```{r}
 #load packages
-library("car") 
-library("ggplot2") 
-library("plotrix") 
-require("gridExtra") 
-require("utils")
+library(car) 
+library(ggplot2) 
+library(plotrix) 
+require(gridExtra) 
+require(utils)
 library(lubridate)
 library(tidyverse)
 
@@ -65,7 +64,6 @@ BW.data<-merge(BW.data, metadata, by.x= "frag.id") #merge with metadata
   BW.data$time.point<-as.factor(as.character(BW.data$time.point))
 
 #HPutnam original code source
-
 # load data 
 CalData<-read.csv('data/Buoyant_weight/Bouyant_weight_calibration_curve.csv', header=T, sep=",")
 #Data with Standard weights in grams in deionized water, saltwater, and the temp that they were measured at
@@ -182,9 +180,9 @@ df %>%
 # Genotype 867B = frags 47, 48, 49, 50.
 # screening biopsy for '867' was D.
 
-# Genotype 868 = frags 109, 110, 111, 112
-# all have pretty even mixtures but all C-dom except 112@T0 was D-dom (only 58% D). 
-# label this a D
+# Genotype 868 = frags 109 (culled, cooksd in analysis), 110, 111 (culled, cooksd), 112
+# 112@T0 was D-dom (58% D), 110 only T2 (T0 failed) 
+# labeled as D
 
 # Genotype 912 = frags 51, 52, 53, 64
 # 53 and 64 are 98% D.
@@ -237,11 +235,11 @@ mort2<-mort2 %>%
   filter(!frag.id==2) %>%
   filter(!frag.id==8)%>%
   filter(!frag.id==32)%>%
-    filter(!frag.id==97)%>%
-    filter(!frag.id==144)%>%
-    filter(!frag.id==196)%>%
-    filter(!frag.id==235)%>%
-    filter(!frag.id==276)
+  filter(!frag.id==97)%>%
+  filter(!frag.id==144)%>%
+  filter(!frag.id==196)%>%
+  filter(!frag.id==235)%>%
+  filter(!frag.id==276)
 
 # change missing T2 scores to the score at T1 ONLY for 100% mortality at T1
 mort2<-mort2 %>%
@@ -265,9 +263,8 @@ df<-df %>%
   df$big.tank<-as.numeric(df$big.tank)
   df$tank<-as.numeric(df$tank)
   df$days<-as.numeric(df$days)
-
-df %>% filter(is.na(dom)) #what frags do not have dom symb data: 134, 135, 137, 195
-df<-df %>% filter(!is.na(dom))# remove them and then add them back in in a few lines
+  df %>% filter(is.na(dom)) #what frags do not have dom symb data: 134, 135, 137, 195
+  df<-df %>% filter(!is.na(dom))# remove them and then add them back in in a few lines
 
 #If days has NA, change to dates based on condition of time.point (T1 or T2)
 df<-
