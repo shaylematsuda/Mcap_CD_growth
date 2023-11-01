@@ -180,8 +180,10 @@ df %>%
 # Genotype 867B = frags 47, 48, 49, 50.
 # screening biopsy for '867' was D.
 
-# Genotype 868 = frags 109 (culled, cooksd in analysis), 110, 111 (culled, cooksd), 112
-# 112@T0 was D-dom (58% D), 110 only T2 (T0 failed) 
+# Genotype 868 = Two frags of this genotype, one D and one C
+qpcr_raw868<-qpcr_raw %>%
+          filter(frag.id %in% c("110","112"))
+# Two fragments of 112 -> @T0 was D-dom (58% D), 110 only qPCR at T2 (T0 failed) which could have been due to symbiont change over time. The ct values were lower in the 112 fragment, and much later in the 110 fragment, providing more confidence for the D designation. The standard deviation for the D designation was 0.21 whereas it was 1.22 for the C. 
 # labeled as D
 
 # Genotype 912 = frags 51, 52, 53, 64

@@ -111,7 +111,7 @@ write_csv(qpcr, path = "qPCR/qpcr_processed.csv")
 # Colony pre-screening biopsies
 ```{r}
 # List qPCR data files for experimental fragments
-plate0 <- list.files(path = "qPCR", pattern = "UROP_qPCR_genotypes.*", full.names = TRUE)
+plate0 <- list.files(path = "data/qPCR", pattern = "UROP_qPCR_genotypes.*", full.names = TRUE)
 # Read in data and calculate target ratios
 import <- steponeR(files = plate0, 
                delim = ",", 
