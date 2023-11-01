@@ -1,0 +1,126 @@
+---
+title: "qPCR data processing"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Load Libraries 
+```{r}
+library(devtools)   # install.packages("devtools")
+library(steponeR) # install_github("jrcunning/steponeR")
+library(tidyverse) # install.packages("tidyverse")
+library(cowplot) #install.packages("cowplot)
+library(grid) #install.packages(grid)
+```
+
+
+# Importing raw qPCR data from Quant Studio Design and Analysis Software 
+```{r}
+# List qPCR data files for experimental fragments
+plates <- list.files(path = "/Users/shaylematsuda/Desktop/Projects/Mcap_CD_growth/data/qPCR", pattern = "UROP_Time.*.csv", full.names = TRUE)
+# Read in data and calculate target ratios
+df <- steponeR(files = plates, 
+               delim = ",", 
+               target.ratios = "C.D", 
+               fluor.norm = list(C = 2.268, D = 0),
+               copy.number = list(C = 33, D = 3),
+               ploidy = list(C = 1, D = 1),
+               extract = list(C = 0.813, D = 0.813))
+qpcr <- df$result
+
+## Remove positive and negative controls from qPCR data
+qpcr <- qpcr[grep("POS", qpcr$Sample.Name, fixed = T, invert = T), ]
+qpcr <- qpcr[grep("NTC", qpcr$Sample.Name, fixed = T, invert = T), ]
+
+## Filter out detections without two technical replicates
+qpcr$fail <- ifelse(qpcr$C.reps < 2 & qpcr$D.reps < 2, TRUE, FALSE)
+fails <- qpcr[qpcr$fail==TRUE, ]
+qpcr <- qpcr[which(qpcr$fail==FALSE),]
+## Set C:D ratio to -Inf (when only D) and Inf (when only C)
+qpcr$C.D[which(qpcr$C.reps < 2)] <- -Inf
+qpcr$C.D[which(qpcr$D.reps < 2)] <- Inf
+## Calculate Proportion C and Proportion D
+qpcr$propC <- qpcr$C.D / (qpcr$C.D + 1)
+qpcr$propD <- 1 - qpcr$propC
+qpcr$propD[which(qpcr$C.D==-Inf)] <- 1
+qpcr$propC[which(qpcr$C.D==-Inf)] <- 0
+qpcr$propD[which(qpcr$C.D==Inf)] <- 0
+qpcr$propC[which(qpcr$C.D==Inf)] <- 1
+## Categorize each sample as C-dominated or D-dominated
+qpcr$Dom <- ifelse(qpcr$propC>qpcr$propD, "C", "D")
+## Define category for symbiont mixture
+qpcr$Mix <- factor(ifelse(qpcr$propC>qpcr$propD, 
+                          ifelse(qpcr$propD!=0, "CD", "C"), 
+                          ifelse(qpcr$propD>qpcr$propC, 
+                                 ifelse(qpcr$propC!=0, "DC", "D"), NA)), 
+                   levels = c("C", "CD", "DC", "D"))
+```
+
+# Tidy and QC data
+```{r}
+# Create columns for timepoint and frag.id
+qpcr <- tibble(qpcr) %>%
+  mutate(time = str_extract(File.Name, "Time."),
+         frag.id = factor(parse_number(Sample.Name)))
+
+# Identify duplicates
+dups <- qpcr %>%
+  group_by(frag.id, time) %>%
+  filter(n() > 1)
+
+# Delete 191 from time 2, plate 3 due to technical replicates in disagreement
+# Delete 67 B due to bad amplification / high CT values
+# 42A and B gave same result, delete 42A
+# 268 duplicated but gave same result, delete one
+####### 21A and B gave opposite result -- NEED TO RECONCILE 
+qpcr <- qpcr %>%
+  slice(-c(288, 185, 141, 63))
+
+# save raw version of data
+qpcr_raw <- qpcr
+
+# Select columns to keep
+qpcr <- qpcr %>%
+  select(frag.id, time, propC, propD, Dom, Mix)
+```
+
+# Plots
+```{r}
+#  Plot histogram of proportion D by timepoint
+ggplot(qpcr, aes(x = propD)) +
+  geom_histogram() +
+  facet_grid(~time)
+
+# Tally number of C- and D-dominated samples by timepoint
+qpcr %>%
+  group_by(Dom, time) %>%
+  dplyr::summarize(n = n())
+```
+
+# Save
+```{r}
+# Write processed qPCR data to file
+write_csv(qpcr, path = "qPCR/qpcr_processed.csv")
+```
+
+
+# Colony pre-screening biopsies
+```{r}
+# List qPCR data files for experimental fragments
+plate0 <- list.files(path = "qPCR", pattern = "UROP_qPCR_genotypes.*", full.names = TRUE)
+# Read in data and calculate target ratios
+import <- steponeR(files = plate0, 
+               delim = ",", 
+               target.ratios = "C.D", 
+               fluor.norm = list(C = 2.268, D = 0),
+               copy.number = list(C = 33, D = 3),
+               ploidy = list(C = 1, D = 1),
+               extract = list(C = 0.813, D = 0.813))
+
+qpcr0 <- import$result
+```
+
